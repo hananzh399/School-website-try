@@ -1,0 +1,3065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>Finance Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <style>
+    :root {
+      --bg-gradient-start: #667eea; --bg-gradient-end: #764ba2;
+      --header-text: white; --header-subtext: rgba(255, 255, 255, 0.8);
+    }
+    body.theme-blue { --bg-gradient-start: #667eea; --bg-gradient-end: #764ba2; --header-text: white; }
+    body.theme-green { --bg-gradient-start: #34d399; --bg-gradient-end: #10b981; --header-text: white; }
+    body.theme-dark { --bg-gradient-start: #1f2937; --bg-gradient-end: #111827; --header-text: #e5e7eb; --header-subtext: #9ca3af; }
+    body.theme-light { --bg-gradient-start: #f9fafb; --bg-gradient-end: #e5e7eb; --header-text: #1f2937; --header-subtext: #4b5563; }
+    
+   body.theme-blue {
+      --bg-gradient-start: #667eea;
+      --bg-gradient-end: #764ba2;
+      --header-text: white;
+      --header-subtext: rgba(255, 255, 255, 0.8);
+    }
+
+    body.theme-green {
+      --bg-gradient-start: #34d399;
+      --bg-gradient-end: #10b981;
+      --header-text: white;
+      --header-subtext: rgba(255, 255, 255, 0.9);
+    }
+
+    body.theme-dark {
+      --bg-gradient-start: #1f2937;
+      --bg-gradient-end: #111827;
+      --header-text: #e5e7eb;
+      --header-subtext: #9ca3af;
+    }
+
+    body.theme-light {
+      --bg-gradient-start: #f9fafb;
+      --bg-gradient-end: #e5e7eb;
+      --header-text: #1f2937;
+      --header-subtext: #4b5563;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+      transition: background 0.5s ease;
+    }
+
+    .header-main-text { color: var(--header-text); }
+    .header-sub-text { color: var(--header-subtext); }
+
+    .header-icon {
+      filter: brightness(0) invert(1);
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+    .header-icon.logo-enlarged {
+        transform: scale(1.8);
+    }
+    body.theme-light .header-icon {
+      filter: none;
+    }
+    
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body.theme-light .glass-effect, body.theme-blue .glass-effect, body.theme-green .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    body.theme-dark .glass-effect {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(55, 65, 81, 0.5);
+    }
+    body.theme-dark .text-gray-800 { color: #e5e7eb; }
+    body.theme-dark .text-gray-700 { color: #d1d5db; }
+    body.theme-dark .font-medium.text-gray-700 { color: #d1d5db; }
+    body.theme-dark .text-gray-600 { color: #9ca3af; }
+    body.theme-dark .text-gray-500 { color: #6b7280; }
+    body.theme-dark input, body.theme-dark select, body.theme-dark textarea { 
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #e5e7eb;
+    }
+    body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #9ca3af; }
+    body.theme-dark .bg-white { background-color: #374151; }
+    body.theme-dark .border-gray-300 { border-color: #4b5563; }
+    body.theme-dark .bg-gray-50 { background-color: #1f2937; }
+    body.theme-dark .divide-y.divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #374151; }
+    body.theme-dark .card-hover:hover {
+        background: rgba(55, 65, 81, 0.8);
+    }
+    body.theme-dark .table-row:hover {
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.15) 100%);
+    }
+    body.theme-dark .amount-in-words { color: #9ca3af; }
+
+    .amount-hidden {
+      filter: blur(8px);
+      user-select: none;
+      cursor: pointer;
+    }
+
+    @keyframes celebrate {
+      0% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.05) rotate(1deg); }
+      50% { transform: scale(1.1) rotate(0deg); }
+      75% { transform: scale(1.05) rotate(-1deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-slide-in {
+      animation: slideIn 0.5s ease-out;
+    }
+    
+    .amount-in-words {
+      font-size: 0.75rem;
+      pointer-events: none;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+    
+    .input-container {
+      position: relative;
+    }
+    
+    .progress-glow {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-danger:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+    }
+    
+    .table-row {
+        cursor: pointer;
+    }
+    .table-row:hover {
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.1) 100%);
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .notification.success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .notification.error {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .storage-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(34, 197, 94, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+    }
+
+    .bank-dropdown, .modal-bank-dropdown, .modal-category-container {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .bank-dropdown.show, .modal-bank-dropdown.show, .modal-category-container.show {
+      opacity: 1;
+      max-height: 200px;
+    }
+
+    .custom-bank-input, .modal-custom-bank-input, .modal-custom-category-input {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .custom-bank-input.show, .modal-custom-bank-input.show, .modal-custom-category-input.show {
+      opacity: 1;
+      max-height: 100px;
+    }
+
+    .field-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .nav-button {
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .back-button {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+    }
+
+    .back-button:hover {
+      box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4);
+    }
+
+    .settings-button {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+    }
+
+    .settings-button:hover {
+      box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4);
+    }
+    
+    .finance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .finance-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 0.25rem;
+        border-radius: 0.75rem;
+        transition: background-color 0.2s ease-in-out, transform 0.2s ease;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .finance-action-btn:hover {
+        transform: translateY(-2px);
+    }
+    body:not(.theme-dark) .finance-action-btn:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    body.theme-dark .finance-action-btn:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .finance-action-btn .icon-bg {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .finance-action-btn:hover .icon-bg {
+        transform: scale(1.05);
+    }
+
+    .finance-action-btn i {
+        font-size: 1.5rem;
+    }
+
+    #transactionModal {
+        background-color: var(--bg-gradient-start);
+        background-image: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+    }
+    
+    body.theme-dark #transactionModal {
+        background-color: #1f2937;
+        background-image: none;
+    }
+
+    #closeTransactionModalBtn {
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        line-height: 1;
+        transition: all 0.2s ease;
+        z-index: 20;
+    }
+    body:not(.theme-dark) #closeTransactionModalBtn {
+        background-color: #e5e7eb;
+        color: #4b5563;
+    }
+    body:not(.theme-dark) #closeTransactionModalBtn:hover {
+        background-color: #d1d5db;
+    }
+     body.theme-dark #closeTransactionModalBtn {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #e5e7eb;
+    }
+     body.theme-dark #closeTransactionModalBtn:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Card Page Styles */
+    #cardPage .container {
+        perspective: 1200px;
+    }
+    #projectCardDisplay {
+        width: 100%;
+        max-width: 420px;
+        height: 260px;
+        margin: auto;
+        font-family: 'SF Mono', 'Courier New', Courier, monospace;
+        transition: transform 0.1s ease;
+        transform-style: preserve-3d;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3);
+    }
+    #projectCardDisplay::before, #projectCardDisplay::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+    }
+    #projectCardDisplay::before {
+        background-image: linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.2) 40%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        z-index: 2;
+    }
+    #projectCardDisplay::after { /* Glare effect */
+        background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.4), rgba(255,255,255,0) 40%);
+        z-index: 3;
+        opacity: 0;
+    }
+    #projectCardDisplay:hover::after {
+        opacity: 1;
+    }
+    
+    .card-chip {
+        width: 54px;
+        height: 42px;
+        background: linear-gradient(135deg, #ddcc99, #b09144);
+        border-radius: 6px;
+        border: 1px solid rgba(0,0,0,0.2);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 4px;
+        gap: 2px;
+    }
+    .card-chip::before, .card-chip::after {
+        content: '';
+        border: 1px solid #7d6a3c;
+        border-radius: 3px;
+    }
+    #cardPageNumber, #cardPageName, #cardPageValidThru {
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+    }
+    .card-label {
+        font-size: 0.65rem;
+        opacity: 0.8;
+        letter-spacing: 0.1em;
+        font-weight: 500;
+    }
+    
+    .mobile-logo {
+        display: none;
+    }
+
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+        .desktop-logo {
+            display: none;
+        }
+        .mobile-logo {
+            display: block;
+        }
+        .header-container {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
+        .header-actions {
+            order: -1;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .header-main-text {
+            font-size: 1.75rem !important;
+            justify-content: center;
+        }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="page active" id="mainPage">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+      <div class="header-container mb-8">
+        <div class="flex-grow">
+          <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text" id="main-header-text">
+            <img id="mainPageDesktopLogo" src="picasa.png" alt="Tracker icon" class="mr-3 header-icon desktop-logo" height="60" width="60"/>
+            <span data-translate-key="installmentHeader">Installment Payment Tracker</span>
+          </h1>
+          <h2 id="project-name-header" class="text-xl font-medium header-sub-text mt-1 hidden"></h2>
+          <p class="header-sub-text" id="header-subtext" data-translate-key="installmentSubHeader">
+            Track your payments with ease and precision
+          </p>
+        </div>
+        <div class="header-actions flex gap-2">
+            <img id="mainPageMobileLogo" src="picasa.png" alt="Tracker icon" class="header-icon mobile-logo" height="48" width="48"/>
+            <div class="flex gap-2">
+                <a href="dashboard.html" aria-label="Go to Dashboard" class="nav-button settings-button" data-title-key="backToDashboard">
+                  <i class="fas fa-tachometer-alt"></i>
+                </a>
+                <button aria-label="Open settings" class="nav-button settings-button" id="settingsFromMain" data-title-key="settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium" id="summaryCard1Label" data-translate-key="totalAmount">Total Amount</div>
+            <button id="toggleVisibilityBtn" title="Show Amounts" class="text-gray-500 hover:text-gray-700 text-lg leading-none">
+                <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <div class="text-3xl font-bold text-blue-600" id="totalAmount">0</div>
+          <div class="text-xs text-gray-500 mt-1 min-h-[1rem]" id="totalAmountWords"></div>
+        </div>
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium" id="summaryCard2Label" data-translate-key="paidAmount">Paid Amount</div>
+            <img alt="Check circle icon in green color" height="24" src="https://storage.googleapis.com/a1aa/image/054c34ba-75cc-4db3-349f-3b5a0c5e0bbe.jpg" width="24"/>
+          </div>
+          <div class="text-3xl font-bold text-green-600" id="paidAmount">0</div>
+          <div class="text-xs text-gray-500 mt-1 min-h-[1rem]" id="paidAmountWords"></div>
+        </div>
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium" id="summaryCard3Label" data-translate-key="pendingAmount">Pending Amount</div>
+            <img alt="Clock icon in red color" height="24" src="https://storage.googleapis.com/a1aa/image/cdb0610b-5d2e-4915-a30f-b7cea409caa4.jpg" width="24"/>
+          </div>
+          <div class="text-3xl font-bold text-red-600" id="pendingAmount">0</div>
+          <div class="text-xs text-gray-500 mt-1 min-h-[1rem]" id="pendingAmountWords"></div>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6 mb-8" id="progressContainer">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-800" id="progressTitle" data-translate-key="paymentProgress">Payment Progress</h3>
+          <span class="text-sm font-medium text-gray-600" id="progressPercentage">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+          <div class="h-4 bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-700 ease-out progress-glow" id="progressBar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div id="installmentModeFormContainer">
+        <div class="glass-effect rounded-2xl p-6 mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <img alt="Plus circle icon in blue color" class="mr-3" height="24" src="https://storage.googleapis.com/a1aa/image/8e157734-2870-4d18-4cf7-ed69d2ea9bbd.jpg" width="24"/>
+            <span id="formTitle" data-translate-key="addPayment">Add Payment</span>
+          </h2>
+          <form class="space-y-6" id="paymentForm" novalidate="">
+            <input id="editPaymentId" type="hidden"/>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="projectName" data-translate-key="projectNameLabel">Project/Item Name</label>
+                <input aria-required="true" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="projectName" placeholder="e.g., Plot in ABC Town" required="" type="text"/>
+              </div>
+               <div id="paymentDateContainer">
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="paymentDate" data-translate-key="paymentDateLabel">Payment Date</label>
+                <input aria-required="true" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="paymentDate" required="" type="date"/>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div id="totalCostContainer" class="input-container">
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="totalCost">
+                  <span id="totalCostLabel" data-translate-key="totalAmountLabel">Total Amount</span>
+                  <span class="field-label hidden" id="totalCostHelper">This shows the pending amount</span>
+                </label>
+                <input aria-required="true" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="totalCost" min="0" placeholder="e.g., 6100000" required="" type="number"/>
+                <div aria-atomic="true" aria-live="polite" class="amount-in-words" id="totalCostWords" style="right: 1rem;"></div>
+              </div>
+              <div id="paymentAmountContainer" class="input-container">
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="paymentAmount" data-translate-key="transactionAmountLabel">Transaction Amount</label>
+                <input aria-required="true" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="paymentAmount" min="1" placeholder="e.g., 100000" required="" type="number"/>
+                <div aria-atomic="true" aria-live="polite" class="amount-in-words" id="paymentAmountWords" style="right: 1rem;"></div>
+              </div>
+            </div>
+            
+            <div class="hidden" id="paymentDescriptionContainer">
+              <label class="block text-sm font-medium text-gray-700 mb-2" for="paymentDescription" data-translate-key="descriptionOptional">Description (Optional)</label>
+              <input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="paymentDescription" placeholder="e.g., Monthly Salary, Groceries" type="text"/>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div id="paymentMethodContainer">
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="paymentMethod" data-translate-key="paymentMethodLabel">Payment Method</label>
+                <select aria-required="true" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="paymentMethod" required="">
+                  <option value="" data-translate-key="selectPaymentMethod">Select Payment Method</option>
+                  <option value="cash" data-translate-key="cash">Cash</option>
+                  <option value="bank" data-translate-key="bankTransaction">Bank Transaction</option>
+                </select>
+              </div>
+              <div aria-hidden="true" class="bank-dropdown" id="bankDropdownContainer">
+                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center" for="bankName">
+                  <img alt="University bank icon" class="mr-2" height="16" src="https://storage.googleapis.com/a1aa/image/2ff54de4-5b8d-4c92-fe80-55d05aebbc33.jpg" width="16"/>
+                  <span data-translate-key="selectBank">Select Bank</span>
+                </label>
+                <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="bankName">
+                  <option value="" data-translate-key="chooseBank">Choose Bank</option>
+                  <option value="custom" data-translate-key="addCustomBank">+ Add Custom Bank</option>
+                  <option value="Habib Bank Limited">Habib Bank Limited</option>
+                  <option value="MCB Bank Limited">MCB Bank Limited</option>
+                  <option value="United Bank Limited">United Bank Limited</option>
+                  <option value="Allied Bank Limited">Allied Bank Limited</option>
+                  <option value="Bank Alfalah">Bank Alfalah</option>
+                  <option value="Faysal Bank">Faysal Bank</option>
+                  <option value="Standard Chartered Bank">Standard Chartered Bank</option>
+                  <option value="Meezan Bank">Meezan Bank</option>
+                  <option value="Bank Islami">Bank Islami</option>
+                </select>
+              </div>
+            </div>
+
+            <div aria-hidden="true" class="custom-bank-input" id="customBankContainer">
+              <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center" for="customBankName">
+                <img alt="Edit icon" class="mr-2" height="16" src="https://storage.googleapis.com/a1aa/image/34709403-0b90-4588-ccec-976059f3b9de.jpg" width="16"/>
+                Custom Bank Name
+              </label>
+              <input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="customBankName" placeholder="Enter custom bank name" type="text"/>
+            </div>
+
+            <div id="formActionsDefault">
+              <div class="flex flex-wrap gap-4">
+                <button aria-label="Add/Update primary transaction" class="flex-1 btn-primary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2" id="addPayment" type="button">
+                  <i class="fas fa-plus"></i>
+                  <span id="addPaymentText" data-translate-key="addPayment">Add Payment</span>
+                </button>
+                <button aria-label="View payment history" class="flex-1 btn-secondary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2" id="viewHistory" type="button">
+                  <i class="fas fa-history"></i>
+                  <span data-translate-key="viewHistory">View History</span>
+                </button>
+                <button aria-label="View Project Card" class="flex-1 btn-secondary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2" id="viewCardBtnInstallment" type="button" style="background: linear-gradient(135deg, #10b981, #34d399);">
+                    <i class="fas fa-credit-card"></i>
+                    <span data-translate-key="viewCard">View Card</span>
+                </button>
+                <button aria-label="Export data" class="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-all" id="exportData" type="button">
+                  <i class="fas fa-download"></i>
+                  <span data-translate-key="exportData">Export Data</span>
+                </button>
+                <button aria-label="Delete all records" class="flex-1 btn-danger text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2" id="deleteRecords" type="button">
+                  <i class="fas fa-trash-alt"></i>
+                  <span data-translate-key="deleteAll">Delete All</span>
+                </button>
+              </div>
+            </div>
+            <div class="hidden" id="formActionsEdit">
+              <div class="flex flex-col sm:flex-row gap-4">
+                <button aria-label="Update Transaction" class="flex-grow btn-primary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2" id="updateRecordBtn" type="button">
+                  <i class="fas fa-check"></i>
+                  <span data-translate-key="updateTransaction">Update Transaction</span>
+                </button>
+                <button aria-label="Cancel Edit" class="flex-grow bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2" id="cancelEditBtn" type="button">
+                  <i class="fas fa-times"></i>
+                  <span data-translate-key="cancel">Cancel</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="expenseModeActionsContainer" class="hidden">
+        <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-8">
+            <div class="finance-grid">
+                <button id="addIncomeBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-green-100 dark:bg-green-500/20"><i class="fas fa-plus text-green-600 dark:text-green-400"></i></div>
+                    <span data-translate-key="addIncome">Add Income</span>
+                </button>
+                <button id="addExpenseBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-red-100 dark:bg-red-500/20"><i class="fas fa-minus text-red-600 dark:text-red-400"></i></div>
+                    <span data-translate-key="addExpense">Add Expense</span>
+                </button>
+                 <button id="shortcutTransactionsBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-cyan-100 dark:bg-cyan-500/20"><i class="fas fa-bolt text-cyan-600 dark:text-cyan-400"></i></div>
+                    <span data-translate-key="shortcuts">Shortcuts</span>
+                </button>
+                <button id="viewHistoryBtnFinance" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-blue-100 dark:bg-blue-500/20"><i class="fas fa-history text-blue-600 dark:text-blue-400"></i></div>
+                    <span data-translate-key="history">History</span>
+                </button>
+                <button id="viewChartBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-yellow-100 dark:bg-yellow-500/20"><i class="fas fa-chart-pie text-yellow-600 dark:text-yellow-400"></i></div>
+                    <span data-translate-key="chart">Chart</span>
+                </button>
+                <button id="viewCardBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-teal-100 dark:bg-teal-500/20"><i class="fas fa-credit-card text-teal-600 dark:text-teal-400"></i></div>
+                    <span data-translate-key="viewCard">View Card</span>
+                </button>
+                <button id="shareBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-indigo-100 dark:bg-indigo-500/20"><i class="fas fa-share-alt text-indigo-600 dark:text-indigo-400"></i></div>
+                    <span data-translate-key="share">Share</span>
+                </button>
+                <button id="exportExcelBtn" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-purple-100 dark:bg-purple-500/20"><i class="fas fa-file-excel text-purple-600 dark:text-purple-400"></i></div>
+                    <span data-translate-key="export">Export</span>
+                </button>
+                <button id="deleteAllBtnFinance" class="finance-action-btn text-gray-800">
+                    <div class="icon-bg bg-gray-200 dark:bg-gray-600/20"><i class="fas fa-trash-alt text-gray-600 dark:text-gray-400"></i></div>
+                    <span data-translate-key="deleteAll">Delete All</span>
+                </button>
+            </div>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6 mb-8">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+            <img alt="Bar chart icon in green color" class="mr-3" height="24" src="https://storage.googleapis.com/a1aa/image/5ede1d81-2a34-4a4e-1262-d684b9154bc9.jpg" width="24"/>
+            <span data-translate-key="quickStats">Quick Stats</span>
+          </h3>
+          <div class="text-sm text-gray-600">
+            <span data-translate-key="totalTransactions">Total Transactions</span>: <span class="font-semibold text-blue-600" id="paymentCount">0</span>
+          </div>
+        </div>
+        <div class="mt-4 text-center text-gray-600">
+          <p data-translate-key="historyPrompt">Click "View History" to see detailed records</p>
+        </div>
+      </div>
+      
+      <div aria-describedby="celebrationDesc" aria-labelledby="celebrationTitle" aria-modal="true" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden" id="celebration" role="dialog">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center animate-slide-in">
+          <div aria-hidden="true" class="text-6xl mb-4">🎉</div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-4" id="celebrationTitle" data-translate-key="congratulations">Congratulations!</h3>
+          <p class="text-gray-600 mb-6" id="celebrationDesc" data-translate-key="paymentCompleteMessage">You have successfully completed all payments!</p>
+          <audio aria-hidden="true" id="celebrationAudio" preload="auto">
+            <source src="https://cdn.pixabay.com/audio/2023/03/24/09-26-26-745_1.mp3" type="audio/mpeg"/>
+            <source src="https://cdn.pixabay.com/audio/2023/03/24/09-26-26-745_1.ogg" type="audio/ogg"/>
+          </audio>
+          <button aria-label="Close celebration modal" class="btn-primary text-white font-semibold py-3 px-6 rounded-lg" onclick="closeCelebration()" data-translate-key="close">Close</button>
+        </div>
+      </div>
+      
+      <div class="notification" id="notification" role="alert"></div>
+      
+      <div aria-atomic="true" aria-live="polite" class="storage-indicator">
+        <img alt="Database icon" height="16" src="https://storage.googleapis.com/a1aa/image/878b2bb1-dfeb-4fcd-a7fe-6462082428a2.jpg" width="16"/>
+        <span>Data Auto-Saved</span>
+      </div>
+    </div>
+  </div>
+
+    <div id="transactionModal" class="fixed inset-0 z-50 hidden">
+        <div class="w-full h-full overflow-y-auto glass-effect relative">
+             <button id="closeTransactionModalBtn" data-title-key="close">&times;</button>
+             <div class="max-w-lg mx-auto px-6 pb-8">
+                <form id="modalTransactionForm" class="space-y-4">
+                    <input type="hidden" id="modalEditId">
+                    <div class="pt-12 mb-6 text-center">
+                        <h3 id="transactionModalTitle" class="text-3xl font-bold text-gray-800" data-translate-key="addTransaction">Add Transaction</h3>
+                    </div>
+                    
+                    <div>
+                        <label for="modalAmount" class="block text-sm font-medium text-gray-700 mb-2" data-translate-key="amount">Amount</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-grow">
+                                <input type="number" id="modalAmount" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 5000" required>
+                            </div>
+                            <button type="button" id="speakAmountBtn" class="w-11 h-11 flex-shrink-0 bg-blue-100 text-blue-600 rounded-lg hidden items-center justify-center hover:bg-blue-200 transition-colors" title="Speak amount">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                        <p id="modalAmountWords" class="amount-in-words text-gray-500 mt-1 min-h-[1rem] relative text-left pl-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="modalDate" class="block text-sm font-medium text-gray-700 mb-2" data-translate-key="date">Date</label>
+                        <input type="date" id="modalDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+
+                     <div>
+                        <label for="modalDescription" class="block text-sm font-medium text-gray-700 mb-2" data-translate-key="descriptionOptional">Description (Optional)</label>
+                        <input type="text" id="modalDescription" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., Details about the transaction">
+                     </div>
+
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="modalCategory" class="block text-sm font-medium text-gray-700 mb-2" data-translate-key="category">Category</label>
+                            <select id="modalCategory" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" required></select>
+                        </div>
+                        <div aria-hidden="true" class="modal-custom-category-input" id="modalCustomCategoryContainer">
+                            <label class="block text-sm font-medium text-gray-700 mb-2" for="modalCustomCategoryName">Custom Category</label>
+                            <input class="w-full px-4 py-3 border border-gray-300 rounded-lg" id="modalCustomCategoryName" placeholder="Enter new category" type="text"/>
+                        </div>
+                     </div>
+
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="modalPaymentMethod" class="block text-sm font-medium text-gray-700 mb-2" data-translate-key="paymentMethodLabel">Payment Method</label>
+                            <select id="modalPaymentMethod" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="cash" data-translate-key="cash">Cash</option>
+                                <option value="bank" data-translate-key="bankTransaction">Bank Transaction</option>
+                            </select>
+                        </div>
+                        <div aria-hidden="true" class="modal-bank-dropdown" id="modalBankDropdownContainer">
+                            <label class="block text-sm font-medium text-gray-700 mb-2" for="modalBankName" data-translate-key="selectBank">Select Bank</label>
+                            <select class="w-full px-4 py-3 border border-gray-300 rounded-lg" id="modalBankName"></select>
+                        </div>
+                     </div>
+                    <div aria-hidden="true" class="modal-custom-bank-input" id="modalCustomBankContainer">
+                        <label class="block text-sm font-medium text-gray-700 mb-2" for="modalCustomBankName">Custom Bank Name</label>
+                        <input class="w-full px-4 py-3 border border-gray-300 rounded-lg" id="modalCustomBankName" placeholder="Enter custom bank name" type="text"/>
+                    </div>
+
+                    <div>
+                        <label for="modalReceipt" class="block text-sm font-medium text-gray-700 mb-2">Bank Receipt (Optional)</label>
+                        <input type="file" id="modalReceipt" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*">
+                        <div id="modalReceiptPreviewContainer" class="mt-4 hidden relative w-48">
+                             <img id="modalReceiptPreview" src="" alt="Receipt Preview" class="rounded-lg max-w-full h-auto shadow-md">
+                             <button type="button" id="removeReceiptBtn" title="Remove Receipt" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm shadow-lg">&times;</button>
+                        </div>
+                    </div>
+
+                     <div class="pt-4 flex flex-col sm:flex-row gap-4">
+                        <button id="saveTransactionBtn" type="submit" class="flex-1 btn-primary text-white font-semibold py-3 px-6 rounded-lg" data-translate-key="saveTransaction">Save Transaction</button>
+                        <button id="makeShortcutBtn" type="button" class="flex-1 btn-secondary bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 px-6 rounded-lg hidden" data-translate-key="makeShortcut">Make Shortcut</button>
+                     </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="receiptModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden p-4">
+        <img id="receiptModalImage" src="" alt="Receipt" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+        <button id="closeReceiptModalBtn" class="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold leading-none hover:bg-black/75 transition-colors">&times;</button>
+    </div>
+
+    <div id="deleteAllPasswordModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 glass-effect">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Confirm Deletion</h3>
+            <p class="text-gray-600 mb-6">To delete all records for this project, please enter the confirmation password.</p>
+            <div class="relative">
+                <input type="password" id="deleteAllPasswordInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Password">
+                <p id="deleteAllPasswordError" class="text-red-500 text-sm mt-2 hidden">Incorrect password. Please try again.</p>
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button id="cancelDeleteAllBtn" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-all">Cancel</button>
+                <button id="confirmDeleteAllBtn" class="flex-1 btn-danger text-white font-semibold py-2 px-4 rounded-lg">Confirm & Delete All</button>
+            </div>
+        </div>
+    </div>
+  
+  <div class="page" id="historyPage">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+      <div class="header-container mb-8">
+        <div class="flex-grow">
+          <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text">
+            <img id="historyPageDesktopLogo" src="picasa.png" alt="Pay-Track Logo" class="mr-3 header-icon desktop-logo" height="60" width="60"/>
+            <span data-translate-key="transactionHistory">Transaction History</span>
+          </h1>
+          <p class="header-sub-text" data-translate-key="historySubtitle">Detailed view of all your records</p>
+        </div>
+        <div class="header-actions flex gap-2">
+            <img id="historyPageMobileLogo" src="picasa.png" alt="Pay-Track Logo" class="header-icon mobile-logo" height="48" width="48"/>
+            <div class="flex gap-2">
+              <a href="dashboard.html" aria-label="Go to Dashboard" class="nav-button settings-button" data-title-key="backToDashboard">
+                  <i class="fas fa-tachometer-alt"></i>
+              </a>
+              <button aria-label="Open settings" class="nav-button settings-button" id="settingsFromHistory" data-title-key="settings">
+                <i class="fas fa-cog"></i>
+              </button>
+              <button aria-label="Back to Tracker" class="nav-button back-button" id="backToMain" data-title-key="backToDashboard">
+                <i class="fas fa-arrow-left"></i>
+              </button>
+            </div>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6 mb-8">
+        <div class="search-filter-container">
+          <div class="search-input">
+            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center" for="searchInput">
+              <img alt="Search icon" class="mr-2" height="16" src="https://storage.googleapis.com/a1aa/image/84c3a51b-5bbb-4c50-8288-d1a0131512e7.jpg" width="16"/>
+              <span data-translate-key="searchRecords">Search Records</span>
+            </label>
+            <input aria-label="Search records" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="searchInput" placeholder="Search by category, amount, or bank..." type="text"/>
+          </div>
+          <div class="filter-select">
+            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center" for="methodFilter">
+              <img alt="Filter icon" class="mr-2" height="16" src="https://storage.googleapis.com/a1aa/image/f02e3d29-488e-4b4c-bc35-42529df8db2a.jpg" width="16"/>
+              <span data-translate-key="filterByMethod">Filter by Method</span>
+            </label>
+            <select aria-label="Filter by payment method" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="methodFilter">
+              <option value="" data-translate-key="allMethods">All Methods</option>
+              <option value="cash" data-translate-key="cash">Cash</option>
+              <option value="bank" data-translate-key="bankTransaction">Bank Transaction</option>
+            </select>
+          </div>
+          <div class="filter-select">
+            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center" for="dateFilter">
+              <img alt="Calendar icon" class="mr-2" height="16" src="https://storage.googleapis.com/a1aa/image/09312144-cc7f-4442-70a2-d78bd5c3a08e.jpg" width="16"/>
+              <span data-translate-key="filterByDate">Filter by Date</span>
+            </label>
+            <select aria-label="Filter by date" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="dateFilter">
+              <option value="" data-translate-key="allDates">All Dates</option>
+              <option value="today" data-translate-key="today">Today</option>
+              <option value="week" data-translate-key="thisWeek">This Week</option>
+              <option value="month" data-translate-key="thisMonth">This Month</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6 mb-8 overflow-x-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <img alt="Table icon in purple color" class="mr-3" height="24" src="https://storage.googleapis.com/a1aa/image/315e271e-06ab-469f-24df-ef4f3a387d01.jpg" width="24"/>
+            <span data-translate-key="transactionRecords">Transaction Records</span>
+          </h2>
+          <div class="text-sm text-gray-600">
+            <span data-translate-key="showing">Showing</span>: <span class="font-semibold text-purple-600" id="filteredCount">0</span> <span data-translate-key="of">of</span> <span class="font-semibold" id="totalCount">0</span> <span data-translate-key="records">records</span>
+          </div>
+        </div>
+        <table aria-label="Payment records table" class="w-full border-collapse" role="table">
+          <thead id="historyTableHeader"></thead>
+          <tbody class="divide-y divide-gray-200" id="historyTableBody" role="rowgroup"></tbody>
+        </table>
+        <div aria-live="polite" class="text-center py-12 text-gray-500 hidden" id="noPaymentsHistory" role="alert">
+          <img alt="Inbox icon in gray color" class="mx-auto mb-4" height="96" src="https://storage.googleapis.com/a1aa/image/4363df2d-cd71-4acb-a7e5-6dadbffa8043.jpg" width="96"/>
+          <h3 class="text-xl font-semibold mb-2" data-translate-key="noRecordsFound">No Records Found</h3>
+          <p data-translate-key="noRecordsDescription">Start by adding your first transaction on the main page</p>
+          <button aria-label="Add a record" class="mt-4 btn-primary text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mx-auto" id="goToTracker">
+            <i class="fas fa-plus"></i>
+            <span data-translate-key="addRecord">Add Record</span>
+          </button>
+        </div>
+        <div aria-live="polite" class="text-center py-8 text-gray-500 hidden" id="noFilterResults" role="alert">
+          <img alt="Search icon in gray color" class="mb-4" height="64" src="https://storage.googleapis.com/a1aa/image/eecfea0e-3b9c-488f-8ec5-734476fcd172.jpg" width="64"/>
+          <h3 class="text-lg font-semibold mb-2" data-translate-key="noFilterResults">No Results Found</h3>
+          <p data-translate-key="noFilterDescription">Try adjusting your search or filter criteria</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium text-sm" data-translate-key="avgTransaction">Avg Transaction</div>
+            <img alt="Calculator icon in blue color" height="20" src="https://storage.googleapis.com/a1aa/image/ce986d3b-db64-497a-231e-d54ec31125c9.jpg" width="20"/>
+          </div>
+          <div class="text-2xl font-bold text-blue-600" id="avgPayment">0</div>
+        </div>
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium text-sm" data-translate-key="largestTransaction">Largest Transaction</div>
+            <img alt="Arrow up icon in green color" height="20" src="https://storage.googleapis.com/a1aa/image/445aeab1-c925-4774-8e4b-d1e9066814ad.jpg" width="20"/>
+          </div>
+          <div class="text-2xl font-bold text-green-600" id="maxPayment">0</div>
+        </div>
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium text-sm" data-translate-key="smallestTransaction">Smallest Transaction</div>
+            <img alt="Arrow down icon in orange color" height="20" src="https://storage.googleapis.com/a1aa/image/487a675e-1bad-405b-6449-b9fa3bda79d2.jpg" width="20"/>
+          </div>
+          <div class="text-2xl font-bold text-orange-600" id="minPayment">0</div>
+        </div>
+        <div class="glass-effect rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-gray-600 font-medium text-sm" data-translate-key="lastTransaction">Last Transaction</div>
+            <img alt="Clock icon in purple color" height="20" src="https://storage.googleapis.com/a1aa/image/a0b25380-8e80-472f-09e6-ffe8e5be6f7e.jpg" width="20"/>
+          </div>
+          <div class="text-2xl font-bold text-purple-600" id="lastPaymentDate">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="page" id="detailPage">
+        <div class="container mx-auto px-4 py-8 max-w-4xl">
+            <div class="header-container mb-8 relative">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text">
+                        <i class="fas fa-receipt mr-3"></i>
+                        Transaction Detail
+                    </h1>
+                    <p class="header-sub-text">Complete information for a single record</p>
+                </div>
+                <button aria-label="Back to History" class="nav-button back-button absolute top-0 right-0" id="backToHistoryBtn" title="Back to History">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6 mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500">Amount</p>
+                        <p id="detailAmount" class="text-3xl font-bold text-gray-800"></p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <p class="text-sm text-gray-500">Date & Time</p>
+                        <p id="detailDateTime" class="text-lg font-semibold text-gray-700"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Description</p>
+                        <p id="detailDescription" class="text-md text-gray-800 font-semibold"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Category</p>
+                        <p id="detailCategory" class="text-md text-gray-800 font-semibold"></p>
+                    </div>
+                     <div>
+                        <p class="text-sm font-medium text-gray-500">Type</p>
+                        <p id="detailType" class="text-md text-gray-800 font-semibold"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Payment Method</p>
+                        <p id="detailMethod" class="text-md text-gray-800 font-semibold"></p>
+                    </div>
+                    <div id="detailBankContainer" class="hidden">
+                        <p class="text-sm font-medium text-gray-500">Bank</p>
+                        <p id="detailBank" class="text-md text-gray-800 font-semibold"></p>
+                    </div>
+                    <div id="detailReceiptContainer" class="hidden">
+                        <p class="text-sm font-medium text-gray-500">Receipt</p>
+                        <button id="detailReceiptLink" class="text-md text-blue-600 hover:underline font-semibold">View Receipt</button>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-4">
+                    <button id="detailEditBtn" class="flex-1 btn-secondary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-edit"></i> Edit Transaction
+                    </button>
+                    <button id="detailDeleteBtn" class="flex-1 btn-danger text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-trash"></i> Delete Transaction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <div class="page" id="yearlyChartPage">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <div class="header-container mb-8 relative">
+            <div>
+                <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text">
+                    <i class="fas fa-chart-pie mr-3"></i>
+                    Yearly Financial Summary
+                </h1>
+                <p class="header-sub-text">Click any chart to see a monthly breakdown.</p>
+            </div>
+            <button aria-label="Back to Tracker" class="nav-button back-button absolute top-0 right-0" id="backToMainFromYearly" title="Back to Tracker">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+        <div id="yearlyChartsContainer" class="space-y-12"></div>
+    </div>
+  </div>
+
+  <div class="page" id="monthlyChartPage">
+      <div class="container mx-auto px-4 py-8 max-w-5xl">
+          <div class="header-container mb-8 relative">
+              <div>
+                  <h1 id="monthlyChartTitle" class="text-4xl font-bold mb-2 flex items-center header-main-text">
+                      <i class="fas fa-chart-bar mr-3"></i>
+                      Monthly Summary
+                  </h1>
+                  <p class="header-sub-text">Income and Expense breakdown by month.</p>
+              </div>
+              <button aria-label="Back to Yearly Summary" class="nav-button back-button absolute top-0 right-0" id="backToYearly" title="Back to Yearly Summary">
+                  <i class="fas fa-arrow-left"></i>
+              </button>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div class="glass-effect rounded-2xl p-6">
+                  <h2 class="text-xl font-bold text-gray-800 mb-4">Monthly Income</h2>
+                  <canvas id="monthlyIncomeChart"></canvas>
+              </div>
+              <div class="glass-effect rounded-2xl p-6">
+                  <h2 class="text-xl font-bold text-gray-800 mb-4">Monthly Expenses</h2>
+                  <canvas id="monthlyExpenseChart"></canvas>
+              </div>
+          </div>
+      </div>
+  </div>
+
+
+  <div class="page" id="settingsPage">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+      <div class="header-container mb-8">
+        <div class="flex-grow">
+          <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text">
+            <img id="settingsPageDesktopLogo" src="picasa.png" alt="Pay-Track Logo" class="mr-3 header-icon desktop-logo" height="60" width="60"/>
+            Settings
+          </h1>
+          <p class="header-sub-text">Customize your tracker experience</p>
+        </div>
+        <div class="header-actions flex gap-2">
+            <img id="settingsPageMobileLogo" src="picasa.png" alt="Pay-Track Logo" class="header-icon mobile-logo" height="48" width="48"/>
+            <button aria-label="Back to Tracker" class="nav-button back-button" id="backToMainFromSettings" title="Back to Tracker">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <img alt="Sliders icon in blue color" class="mr-3" height="24" src="https://storage.googleapis.com/a1aa/image/ff035d59-6f2d-44e0-8cf3-4159829ef7e7.jpg" width="24"/>
+          Preferences
+        </h2>
+        <div class="space-y-8">
+           <div class="glass-effect rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Theme</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="themeSelector">
+              <button class="theme-option bg-gradient-to-r from-blue-500 to-indigo-600 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-theme="blue" onclick="setTheme('blue')">
+                Blue
+              </button>
+              <button class="theme-option bg-gradient-to-r from-green-500 to-emerald-600 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-theme="green" onclick="setTheme('green')">
+                Green
+              </button>
+              <button class="theme-option bg-gradient-to-r from-gray-800 to-gray-900 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-theme="dark" onclick="setTheme('dark')">
+                Dark
+              </button>
+              <button class="theme-option bg-gray-200 border border-gray-300 h-12 rounded-lg flex items-center justify-center text-gray-800 font-medium" data-theme="light" onclick="setTheme('light')">
+                Light
+              </button>
+            </div>
+          </div>
+          <div class="glass-effect rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800">Expense Tracker Mode</h3>
+              <p class="text-sm text-gray-600">Switch to track income and expenses. Data is kept separate for each mode.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer" for="expenseModeToggle">
+              <input class="sr-only peer" id="expenseModeToggle" type="checkbox" value=""/>
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <div class="glass-effect rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800">Dynamic Progress Color</h3>
+              <p class="text-sm text-gray-600">Color changes based on progress/spending.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer" for="dynamicColorToggle">
+              <input class="sr-only peer" id="dynamicColorToggle" type="checkbox" value=""/>
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <div class="glass-effect rounded-lg p-4 transition-opacity duration-300" id="manualColorSelector">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Manual Progress Bar Color</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button class="color-option bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-color="green" onclick="setProgressBarColor('green')">
+                Green
+              </button>
+              <button class="color-option bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-color="blue" onclick="setProgressBarColor('blue')">
+                Blue
+              </button>
+              <button class="color-option bg-gradient-to-r from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-color="red" onclick="setProgressBarColor('red')">
+                Red
+              </button>
+              <button class="color-option bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 h-12 rounded-lg flex items-center justify-center text-white font-medium" data-color="yellow" onclick="setProgressBarColor('yellow')">
+                Yellow
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="cardPage">
+    <div class="container mx-auto px-4 py-8 max-w-lg">
+        <div class="header-container mb-8 relative">
+            <div>
+                <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text" data-translate-key="viewCard">
+                    <i class="fas fa-credit-card mr-3"></i>
+                    Project Card
+                </h1>
+                <p class="header-sub-text">Your project's virtual card.</p>
+            </div>
+            <button aria-label="Back to Tracker" class="nav-button back-button absolute top-0 right-0" id="backToMainFromCard" title="Back to Tracker">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+
+        <div id="projectCardDisplay" class="rounded-2xl p-6 text-white relative overflow-hidden flex flex-col justify-between">
+            <!-- Top Row: Logo and Chip -->
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-2">
+                    <img src="picasa.png" alt="PayTrack Logo" class="w-10 h-10" style="filter: brightness(0) invert(1); opacity: 0.9;">
+                    <div class="font-bold text-xl italic opacity-90">PayTrack</div>
+                </div>
+                <div class="card-chip"></div>
+            </div>
+
+            <!-- Middle: Card Number -->
+            <div class="text-left">
+                <p id="cardPageNumber" class="text-2xl md:text-3xl tracking-widest font-mono">0000 0000 0000 0000</p>
+            </div>
+            
+            <!-- Bottom Row: Details and Signal -->
+            <div class="flex justify-between items-end">
+                <div class="flex-grow">
+                    <div class="flex gap-8 items-center">
+                        <div>
+                            <p class="card-label" data-translate-key="cardholderName">CARDHOLDER NAME</p>
+                            <p id="cardPageName" class="text-lg font-semibold uppercase tracking-wider">Project Name</p>
+                        </div>
+                        <div>
+                            <p class="card-label" data-translate-key="validThru">VALID THRU</p>
+                            <p id="cardPageValidThru" class="text-lg font-semibold">12/29</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                     <i class="fas fa-wifi text-4xl text-white/90 transform rotate-90"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="page" id="shortcutTransactionsPage">
+      <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="header-container mb-8 relative">
+          <div>
+            <h1 class="text-4xl font-bold mb-2 flex items-center header-main-text">
+              <i class="fas fa-bolt mr-3"></i>
+              <span data-translate-key="shortcutTransactionsTitle">Shortcut Transactions</span>
+            </h1>
+            <p class="header-sub-text" data-translate-key="shortcutTransactionsSubtitle">Quickly add frequent transactions.</p>
+          </div>
+          <button aria-label="Back to Tracker" class="nav-button back-button absolute top-0 right-0" id="backToMainFromShortcuts" title="Back to Tracker">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+        </div>
+        
+        <div class="glass-effect rounded-2xl p-6">
+          <div class="space-y-4" id="shortcutListContainer">
+            <!-- Shortcut cards will be inserted here -->
+          </div>
+          <div aria-live="polite" class="text-center py-12 text-gray-500 hidden" id="noShortcutsMessage" role="alert">
+            <i class="fas fa-bolt text-4xl mb-4 text-gray-400"></i>
+            <h3 class="text-xl font-semibold mb-2" data-translate-key="noShortcutsYet">No Shortcuts Yet</h3>
+            <p data-translate-key="noShortcutsDescription">Create a shortcut from the transaction modal to add it here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<script src="translations.js"></script>
+<script>
+    let appState = {};
+    let currentSettings = {};
+    let currentPage = 'main';
+    let currentProjectId = null;
+    let undoCache = null;
+    let undoTimeoutId = null;
+    let isBalanceVisible = false; 
+    let currentChartYear = null;
+    let currentChartType = null;
+    let activeCharts = {};
+    let globalSettings = {};
+
+    let INSTALLMENT_STORAGE_KEY = '';
+    let EXPENSE_STORAGE_KEY = '';
+    let SETTINGS_KEY = '';
+    let VISIBILITY_KEY = '';
+    let SHORTCUTS_STORAGE_KEY = '';
+    const PROJECTS_KEY = 'allTrackerProjects';
+    const DELETE_PASSWORD_KEY = 'dashboardDeletePassword';
+    const GLOBAL_SETTINGS_KEY = 'dashboardGlobalSettings';
+
+    const elements = {
+        body: document.body, mainHeaderText: document.getElementById('main-header-text'), headerSubtext: document.getElementById('header-subtext'), projectNameHeader: document.getElementById('project-name-header'), projectName: document.getElementById('projectName'), totalCost: document.getElementById('totalCost'), totalCostContainer: document.getElementById('totalCostContainer'), paymentAmount: document.getElementById('paymentAmount'), paymentAmountContainer: document.getElementById('paymentAmountContainer'), paymentDescription: document.getElementById('paymentDescription'), paymentDescriptionContainer: document.getElementById('paymentDescriptionContainer'), paymentMethod: document.getElementById('paymentMethod'), paymentMethodContainer: document.getElementById('paymentMethodContainer'), paymentDateContainer: document.getElementById('paymentDateContainer'), bankName: document.getElementById('bankName'), customBankName: document.getElementById('customBankName'), bankDropdownContainer: document.getElementById('bankDropdownContainer'), customBankContainer: document.getElementById('customBankContainer'), paymentDate: document.getElementById('paymentDate'), addPaymentBtn: document.getElementById('addPayment'), subtractPaymentBtn: document.getElementById('subtractPayment'), addPaymentText: document.getElementById('addPaymentText'), subtractPaymentText: document.getElementById('subtractPaymentText'), viewHistoryBtn: document.getElementById('viewHistory'), exportDataBtn: document.getElementById('exportData'), deleteRecordsBtn: document.getElementById('deleteRecords'), summaryCard1Label: document.getElementById('summaryCard1Label'), summaryCard2Label: document.getElementById('summaryCard2Label'), summaryCard3Label: document.getElementById('summaryCard3Label'), totalAmountDisplay: document.getElementById('totalAmount'), paidAmountDisplay: document.getElementById('paidAmount'), pendingAmountDisplay: document.getElementById('pendingAmount'), totalAmountWords: document.getElementById('totalAmountWords'), paidAmountWords: document.getElementById('paidAmountWords'), pendingAmountWords: document.getElementById('pendingAmountWords'), progressContainer: document.getElementById('progressContainer'), progressTitle: document.getElementById('progressTitle'), progressBar: document.getElementById('progressBar'), progressPercentage: document.getElementById('progressPercentage'), celebration: document.getElementById('celebration'), celebrationAudio: document.getElementById('celebrationAudio'), paymentForm: document.getElementById('paymentForm'), totalCostWords: document.getElementById('totalCostWords'), paymentAmountWords: document.getElementById('paymentAmountWords'), paymentCount: document.getElementById('paymentCount'), notification: document.getElementById('notification'), totalCostLabel: document.getElementById('totalCostLabel'), totalCostHelper: document.getElementById('totalCostHelper'), formTitle: document.getElementById('formTitle'), editPaymentId: document.getElementById('editPaymentId'), settingsFromMain: document.getElementById('settingsFromMain'), mainPage: document.getElementById('mainPage'), historyPage: document.getElementById('historyPage'), settingsPage: document.getElementById('settingsPage'), backToMainBtn: document.getElementById('backToMain'), settingsFromHistory: document.getElementById('settingsFromHistory'), goToTrackerBtn: document.getElementById('goToTracker'), searchInput: document.getElementById('searchInput'), methodFilter: document.getElementById('methodFilter'), dateFilter: document.getElementById('dateFilter'), historyTableHeader: document.getElementById('historyTableHeader'), historyTableBody: document.getElementById('historyTableBody'), noPaymentsHistory: document.getElementById('noPaymentsHistory'), noFilterResults: document.getElementById('noFilterResults'), filteredCount: document.getElementById('filteredCount'), totalCount: document.getElementById('totalCount'), avgPayment: document.getElementById('avgPayment'), maxPayment: document.getElementById('maxPayment'), minPayment: document.getElementById('minPayment'), lastPaymentDate: document.getElementById('lastPaymentDate'), backToMainFromSettings: document.getElementById('backToMainFromSettings'), expenseModeToggle: document.getElementById('expenseModeToggle'), dynamicColorToggle: document.getElementById('dynamicColorToggle'), manualColorSelector: document.getElementById('manualColorSelector'), themeSelector: document.getElementById('themeSelector'), formActionsDefault: document.getElementById('formActionsDefault'), formActionsEdit: document.getElementById('formActionsEdit'), updateRecordBtn: document.getElementById('updateRecordBtn'), cancelEditBtn: document.getElementById('cancelEditBtn'), toggleVisibilityBtn: document.getElementById('toggleVisibilityBtn'),
+        installmentModeFormContainer: document.getElementById('installmentModeFormContainer'),
+        expenseModeActionsContainer: document.getElementById('expenseModeActionsContainer'),
+        addIncomeBtn: document.getElementById('addIncomeBtn'),
+        addExpenseBtn: document.getElementById('addExpenseBtn'),
+        viewHistoryBtnFinance: document.getElementById('viewHistoryBtnFinance'),
+        viewChartBtn: document.getElementById('viewChartBtn'),
+        shareBtn: document.getElementById('shareBtn'),
+        exportExcelBtn: document.getElementById('exportExcelBtn'),
+        deleteAllBtnFinance: document.getElementById('deleteAllBtnFinance'),
+        transactionModal: document.getElementById('transactionModal'),
+        closeTransactionModalBtn: document.getElementById('closeTransactionModalBtn'),
+        transactionModalTitle: document.getElementById('transactionModalTitle'),
+        modalTransactionForm: document.getElementById('modalTransactionForm'),
+        modalEditId: document.getElementById('modalEditId'),
+        modalAmount: document.getElementById('modalAmount'),
+        modalAmountWords: document.getElementById('modalAmountWords'),
+        modalDate: document.getElementById('modalDate'),
+        modalDescription: document.getElementById('modalDescription'),
+        modalCategory: document.getElementById('modalCategory'),
+        modalCustomCategoryContainer: document.getElementById('modalCustomCategoryContainer'),
+        modalCustomCategoryName: document.getElementById('modalCustomCategoryName'),
+        modalPaymentMethod: document.getElementById('modalPaymentMethod'),
+        modalBankDropdownContainer: document.getElementById('modalBankDropdownContainer'),
+        modalBankName: document.getElementById('modalBankName'),
+        modalCustomBankContainer: document.getElementById('modalCustomBankContainer'),
+        modalCustomBankName: document.getElementById('modalCustomBankName'),
+        modalReceipt: document.getElementById('modalReceipt'),
+        saveTransactionBtn: document.getElementById('saveTransactionBtn'),
+        speakAmountBtn: document.getElementById('speakAmountBtn'),
+        modalReceiptPreviewContainer: document.getElementById('modalReceiptPreviewContainer'),
+        modalReceiptPreview: document.getElementById('modalReceiptPreview'),
+        removeReceiptBtn: document.getElementById('removeReceiptBtn'),
+        receiptModal: document.getElementById('receiptModal'),
+        receiptModalImage: document.getElementById('receiptModalImage'),
+        closeReceiptModalBtn: document.getElementById('closeReceiptModalBtn'),
+        deleteAllPasswordModal: document.getElementById('deleteAllPasswordModal'),
+        deleteAllPasswordInput: document.getElementById('deleteAllPasswordInput'),
+        deleteAllPasswordError: document.getElementById('deleteAllPasswordError'),
+        cancelDeleteAllBtn: document.getElementById('cancelDeleteAllBtn'),
+        confirmDeleteAllBtn: document.getElementById('confirmDeleteAllBtn'),
+        detailPage: document.getElementById('detailPage'),
+        backToHistoryBtn: document.getElementById('backToHistoryBtn'),
+        detailAmount: document.getElementById('detailAmount'),
+        detailDateTime: document.getElementById('detailDateTime'),
+        detailDescription: document.getElementById('detailDescription'),
+        detailCategory: document.getElementById('detailCategory'),
+        detailType: document.getElementById('detailType'),
+        detailMethod: document.getElementById('detailMethod'),
+        detailBankContainer: document.getElementById('detailBankContainer'),
+        detailBank: document.getElementById('detailBank'),
+        detailReceiptContainer: document.getElementById('detailReceiptContainer'),
+        detailReceiptLink: document.getElementById('detailReceiptLink'),
+        detailEditBtn: document.getElementById('detailEditBtn'),
+        detailDeleteBtn: document.getElementById('detailDeleteBtn'),
+        yearlyChartPage: document.getElementById('yearlyChartPage'),
+        yearlyChartsContainer: document.getElementById('yearlyChartsContainer'),
+        backToMainFromYearly: document.getElementById('backToMainFromYearly'),
+        monthlyChartPage: document.getElementById('monthlyChartPage'),
+        monthlyChartTitle: document.getElementById('monthlyChartTitle'),
+        monthlyIncomeChart: document.getElementById('monthlyIncomeChart'),
+        monthlyExpenseChart: document.getElementById('monthlyExpenseChart'),
+        backToYearly: document.getElementById('backToYearly'),
+        cardPage: document.getElementById('cardPage'),
+        projectCardDisplay: document.getElementById('projectCardDisplay'),
+        cardPageNumber: document.getElementById('cardPageNumber'),
+        cardPageName: document.getElementById('cardPageName'),
+        cardPageValidThru: document.getElementById('cardPageValidThru'),
+        backToMainFromCard: document.getElementById('backToMainFromCard'),
+        viewCardBtn: document.getElementById('viewCardBtn'),
+        viewCardBtnInstallment: document.getElementById('viewCardBtnInstallment'),
+        shortcutTransactionsBtn: document.getElementById('shortcutTransactionsBtn'),
+        shortcutTransactionsPage: document.getElementById('shortcutTransactionsPage'),
+        backToMainFromShortcuts: document.getElementById('backToMainFromShortcuts'),
+        shortcutListContainer: document.getElementById('shortcutListContainer'),
+        noShortcutsMessage: document.getElementById('noShortcutsMessage'),
+        makeShortcutBtn: document.getElementById('makeShortcutBtn'),
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- SECURITY CHECK ---
+      if (sessionStorage.getItem('paytrackUserSession') !== 'true') {
+          window.location.replace('lock.html');
+          return;
+      }
+      
+      currentProjectId = sessionStorage.getItem('currentProjectId');
+      
+      if (!currentProjectId) {
+          alert('No project selected. Redirecting to dashboard.');
+          window.location.href = 'dashboard.html';
+          return;
+      }
+      
+      INSTALLMENT_STORAGE_KEY = `project_${currentProjectId}_installment`;
+      EXPENSE_STORAGE_KEY = `project_${currentProjectId}_expense`;
+      SETTINGS_KEY = `project_${currentProjectId}_settings`;
+      VISIBILITY_KEY = `project_${currentProjectId}_visibility`;
+      SHORTCUTS_STORAGE_KEY = `project_${currentProjectId}_shortcuts`;
+      
+      translatePage();
+      
+      globalSettings = JSON.parse(localStorage.getItem(GLOBAL_SETTINGS_KEY)) || {};
+      loadInitialData();
+      setupEventListeners();
+      showStorageStatus();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if(urlParams.has('status') && urlParams.get('status') === 'success') {
+          const message = urlParams.get('message');
+          showNotification(decodeURIComponent(message), 'success');
+          window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    });
+
+    function getNewState(isExpenseMode) {
+      return {
+        totalAmount: 0, paidAmount: 0, pendingAmount: 0,
+        initialBalance: 0, payments: [], projectName: '',
+        expenseMode: isExpenseMode
+      };
+    }
+
+    function loadInitialData() {
+        currentSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {
+            expenseMode: false, theme: 'blue', dynamicProgressBar: false, progressBarColor: 'green', customBanks: [], customIncomeCategories: [], customExpenseCategories: []
+        };
+        globalSettings = JSON.parse(localStorage.getItem(GLOBAL_SETTINGS_KEY)) || {};
+        currentSettings.customIncomeCategories = currentSettings.customIncomeCategories || [];
+        currentSettings.customExpenseCategories = currentSettings.customExpenseCategories || [];
+        
+        const isExpenseMode = currentSettings.expenseMode;
+        appState = getNewState(isExpenseMode);
+        const dataKey = isExpenseMode ? EXPENSE_STORAGE_KEY : INSTALLMENT_STORAGE_KEY;
+        const savedData = JSON.parse(localStorage.getItem(dataKey));
+        
+        const allProjects = JSON.parse(localStorage.getItem(PROJECTS_KEY)) || [];
+        const currentProject = allProjects.find(p => p.id == currentProjectId);
+
+        if (!currentProject) {
+            alert('Project not found. Redirecting to dashboard.');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        if(savedData) {
+            appState = { ...appState, ...savedData };
+        } else {
+            appState.projectName = currentProject.name;
+        }
+        
+        applyTheme(currentSettings.theme);
+        loadCustomBanks();
+        
+        isBalanceVisible = false;
+        
+        updateSummary();
+        updateSettingsUI();
+        clearForm();
+        updateVisibilityUI();
+    }
+    
+    function setupEventListeners() {
+      elements.addPaymentBtn.addEventListener('click', () => processFormSubmission('income'));
+      elements.updateRecordBtn.addEventListener('click', handleUpdateRecord);
+      elements.cancelEditBtn.addEventListener('click', clearForm);
+      elements.viewHistoryBtn.addEventListener('click', () => showPage('history'));
+      elements.exportDataBtn.addEventListener('click', exportData);
+      elements.deleteRecordsBtn.addEventListener('click', confirmDeleteRecords);
+      elements.paymentForm.addEventListener('submit', (e) => { e.preventDefault(); processFormSubmission('income'); });
+      elements.totalCost.addEventListener('input', updateTotalCostWords);
+      elements.paymentAmount.addEventListener('input', updatePaymentAmountWords);
+      elements.paymentMethod.addEventListener('change', handlePaymentMethodChange);
+      elements.bankName.addEventListener('change', handleBankNameChange);
+      
+      elements.addIncomeBtn.addEventListener('click', () => openTransactionModal('income'));
+      elements.addExpenseBtn.addEventListener('click', () => openTransactionModal('expense'));
+      elements.viewHistoryBtnFinance.addEventListener('click', () => showPage('history'));
+      elements.deleteAllBtnFinance.addEventListener('click', confirmDeleteRecords);
+      elements.viewChartBtn.addEventListener('click', () => showPage('yearlyChart'));
+      elements.exportExcelBtn.addEventListener('click', exportToExcel);
+      elements.shareBtn.addEventListener('click', shareFinancialSummary);
+      elements.closeTransactionModalBtn.addEventListener('click', () => elements.transactionModal.classList.add('hidden'));
+      
+      elements.modalTransactionForm.addEventListener('submit', (e) => handleModalTransactionSubmit(e, false));
+      elements.makeShortcutBtn.addEventListener('click', (e) => handleModalTransactionSubmit(e, true));
+
+      elements.modalPaymentMethod.addEventListener('change', handleModalPaymentMethodChange);
+      elements.modalBankName.addEventListener('change', handleModalBankNameChange);
+      elements.modalCategory.addEventListener('change', handleModalCategoryChange);
+      
+      elements.speakAmountBtn.addEventListener('click', speakAmount);
+      elements.modalAmount.addEventListener('input', () => {
+          updateModalAmountWords();
+          const amount = elements.modalAmount.value;
+          elements.speakAmountBtn.classList.toggle('hidden', !(amount && parseFloat(amount) > 0));
+      });
+
+      elements.modalReceipt.addEventListener('change', handleReceiptPreview);
+      elements.removeReceiptBtn.addEventListener('click', removeReceiptPreview);
+      elements.closeReceiptModalBtn.addEventListener('click', () => elements.receiptModal.classList.add('hidden'));
+
+      elements.cancelDeleteAllBtn.addEventListener('click', () => elements.deleteAllPasswordModal.classList.add('hidden'));
+      elements.confirmDeleteAllBtn.addEventListener('click', handleDeleteAllWithPassword);
+
+      elements.settingsFromMain.addEventListener('click', () => showPage('settings'));
+      elements.backToMainBtn.addEventListener('click', () => showPage('main'));
+      elements.backToHistoryBtn.addEventListener('click', () => showPage('history'));
+      elements.settingsFromHistory.addEventListener('click', () => showPage('settings'));
+      elements.goToTrackerBtn.addEventListener('click', () => showPage('main'));
+      elements.searchInput.addEventListener('input', filterPayments);
+      elements.methodFilter.addEventListener('change', filterPayments);
+      elements.dateFilter.addEventListener('change', filterPayments);
+      elements.backToMainFromSettings.addEventListener('click', () => showPage('main'));
+      elements.expenseModeToggle.addEventListener('change', handleExpenseModeToggle);
+      elements.dynamicColorToggle.addEventListener('change', handleDynamicColorToggle);
+      
+      elements.toggleVisibilityBtn.addEventListener('click', toggleVisibility);
+      elements.totalAmountDisplay.addEventListener('click', () => { if (!isBalanceVisible) toggleVisibility(); });
+      elements.paidAmountDisplay.addEventListener('click', () => { if (!isBalanceVisible) toggleVisibility(); });
+      elements.pendingAmountDisplay.addEventListener('click', () => { if (!isBalanceVisible) toggleVisibility(); });
+
+      elements.backToMainFromYearly.addEventListener('click', () => showPage('main'));
+      elements.backToYearly.addEventListener('click', () => showPage('yearlyChart'));
+
+      elements.viewCardBtn.addEventListener('click', () => showPage('card'));
+      elements.viewCardBtnInstallment.addEventListener('click', () => showPage('card'));
+      elements.backToMainFromCard.addEventListener('click', () => showPage('main'));
+      
+      elements.shortcutTransactionsBtn.addEventListener('click', () => showPage('shortcuts'));
+      elements.backToMainFromShortcuts.addEventListener('click', () => showPage('main'));
+      elements.shortcutListContainer.addEventListener('click', handleShortcutListClick);
+
+
+      // Card 3D effect
+      if (elements.projectCardDisplay) {
+        elements.projectCardDisplay.addEventListener('mousemove', (e) => {
+            const card = elements.projectCardDisplay;
+            const { left, top, width, height } = card.getBoundingClientRect();
+            const x = e.clientX - left;
+            const y = e.clientY - top;
+            const rotateX = -1 * ((y - height / 2) / (height / 2)) * 8;
+            const rotateY = ((x - width / 2) / (width / 2)) * 8;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            card.style.setProperty('--x', `${(x / width) * 100}%`);
+            card.style.setProperty('--y', `${(y / height) * 100}%`);
+        });
+        elements.projectCardDisplay.addEventListener('mouseleave', () => {
+            elements.projectCardDisplay.style.transform = 'rotateX(0) rotateY(0)';
+        });
+      }
+
+      // Logo double-click listeners
+      const logos = [
+        document.getElementById('mainPageDesktopLogo'),
+        document.getElementById('mainPageMobileLogo'),
+        document.getElementById('historyPageDesktopLogo'),
+        document.getElementById('historyPageMobileLogo'),
+        document.getElementById('settingsPageDesktopLogo'),
+        document.getElementById('settingsPageMobileLogo')
+      ];
+
+      const toggleLogo = (logo) => {
+          if (logo) logo.classList.toggle('logo-enlarged');
+      };
+
+      logos.forEach(logo => {
+          if (logo) {
+              logo.addEventListener('dblclick', () => toggleLogo(logo));
+          }
+      });
+    }
+
+    function setTodayDate() {
+      const today = new Date().toISOString().split('T')[0];
+      elements.paymentDate.value = today;
+      elements.modalDate.value = today;
+    }
+
+    function showPage(page) {
+        if (currentPage === 'main') {
+            elements.installmentModeFormContainer.classList.add('hidden');
+            elements.expenseModeActionsContainer.classList.add('hidden');
+        }
+
+        Object.values(activeCharts).forEach(chart => chart.destroy());
+        activeCharts = {};
+
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+        const pageMap = { main: elements.mainPage, history: elements.historyPage, settings: elements.settingsPage, detail: elements.detailPage, yearlyChart: elements.yearlyChartPage, monthlyChart: elements.monthlyChartPage, card: elements.cardPage, shortcuts: elements.shortcutTransactionsPage };
+        if (pageMap[page]) {
+            pageMap[page].classList.add('active');
+            currentPage = page;
+            if (page === 'main') updateUIMode(); 
+            if (page === 'history') renderHistoryPage();
+            if (page === 'settings') updateSettingsUI();
+            if (page === 'yearlyChart') renderYearlyCharts();
+            if (page === 'monthlyChart') renderMonthlyCharts();
+            if (page === 'card') renderCardPage();
+            if (page === 'shortcuts') renderShortcutsPage();
+        }
+    }
+
+    function showStorageStatus() {
+      if (typeof(Storage) === "undefined") showNotification('Warning: Data will not persist between sessions', 'error');
+    }
+    
+    function numberToWords(num) {
+        const lang = getLanguage();
+        if (lang === 'es') return numberToWords_es(num);
+        if (lang === 'ur') return numberToWords_ur(num);
+        return numberToWords_en(num);
+    }
+    
+    function numberToWords_en(num) {
+      let currencyName;
+      switch (globalSettings.currency || 'USD') {
+          case 'PKR': case 'INR': currencyName = getTranslatedString('rupees'); break;
+          case 'USD': currencyName = getTranslatedString('dollars'); break;
+          case 'EUR': currencyName = getTranslatedString('euros'); break;
+          case 'GBP': currencyName = getTranslatedString('pounds'); break;
+          case 'JPY': currencyName = getTranslatedString('yen'); break;
+          default: currencyName = '';
+      }
+      if (num === 0) return 'Zero';
+      const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+      const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+      const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+      function convertGroup(n) {
+        let result = '';
+        if (n >= 100) { result += ones[Math.floor(n / 100)] + ' Hundred '; n %= 100; }
+        if (n >= 20) { result += tens[Math.floor(n / 10)] + ' '; n %= 10; }
+        else if (n >= 10) { return result + teens[n - 10] + ' '; }
+        if (n > 0) { result += ones[n] + ' '; }
+        return result;
+      }
+      let result = '';
+      if (num >= 10000000 && ['PKR', 'INR'].includes(globalSettings.currency)) { result += convertGroup(Math.floor(num / 10000000)) + 'Crore '; num %= 10000000; }
+      if (num >= 100000 && ['PKR', 'INR'].includes(globalSettings.currency)) { result += convertGroup(Math.floor(num / 100000)) + 'Lakh '; num %= 100000; }
+      if (num >= 1000000 && !['PKR', 'INR'].includes(globalSettings.currency)) { result += convertGroup(Math.floor(num / 1000000)) + 'Million '; num %= 1000000; }
+      if (num >= 1000) { result += convertGroup(Math.floor(num / 1000)) + 'Thousand '; num %= 1000; }
+      if (num > 0) { result += convertGroup(num); }
+      return result.trim() + ' ' + currencyName;
+    }
+    
+    function numberToWords_es(n) {
+        if (n === 0) return 'cero';
+        const unidades = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+        const especiales = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
+        const decenas = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+        const centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+
+        function convert(n) {
+            if (n < 10) return unidades[n];
+            if (n < 20) return especiales[n - 10];
+            if (n < 30) return 'veinti' + unidades[n % 10];
+            if (n < 100) return decenas[Math.floor(n / 10)] + (n % 10 > 0 ? ' y ' + unidades[n % 10] : '');
+            if (n < 1000) return (n === 100 ? 'cien' : centenas[Math.floor(n / 100)]) + ' ' + (n % 100 > 0 ? convert(n % 100) : '');
+            if (n < 1000000) return (n < 2000 ? 'mil' : convert(Math.floor(n / 1000)) + ' mil') + ' ' + (n % 1000 > 0 ? convert(n % 1000) : '');
+            if (n < 2000000) return 'un millón ' + (n % 1000000 > 0 ? convert(n % 1000000) : '');
+            return convert(Math.floor(n / 1000000)) + ' millones ' + (n % 1000000 > 0 ? convert(n % 1000000) : '');
+        }
+        return convert(n).replace(/\s+/g, ' ').trim();
+    }
+
+    function numberToWords_ur(num) {
+        if (num === 0) return 'صفر';
+        const units = ['', 'ایک', 'دو', 'تین', 'چار', 'پانچ', 'چھ', 'سات', 'آٹھ', 'نو'];
+        const teens = ['دس', 'گیارہ', 'بارہ', 'تیرہ', 'چودہ', 'پندرہ', 'سولہ', 'سترہ', 'اٹھارہ', 'انیس'];
+        const tens = ['', '', 'بیس', 'تیس', 'چالیس', 'پچاس', 'ساٹھ', 'ستر', 'اسی', 'نوے'];
+        let result = '';
+        function convert(n) {
+            if (n < 10) return units[n];
+            if (n < 20) return teens[n - 10];
+            return tens[Math.floor(n / 10)] + ' ' + units[n % 10];
+        }
+        if (num >= 10000000) { result += convert(Math.floor(num / 10000000)) + ' کروڑ '; num %= 10000000; }
+        if (num >= 100000) { result += convert(Math.floor(num / 100000)) + ' لاکھ '; num %= 100000; }
+        if (num >= 1000) { result += convert(Math.floor(num / 1000)) + ' ہزار '; num %= 1000; }
+        if (num >= 100) { result += units[Math.floor(num / 100)] + ' سو '; num %= 100; }
+        if (num > 0) { result += convert(num); }
+        return result.trim().replace(/\s+/g, ' ');
+    }
+
+
+    function updateTotalCostWords() {
+      const value = parseFloat(elements.totalCost.value) || 0;
+      elements.totalCostWords.textContent = numberToWords(value);
+    }
+
+    function updatePaymentAmountWords() {
+      const value = parseFloat(elements.paymentAmount.value) || 0;
+      elements.paymentAmountWords.textContent = numberToWords(value);
+    }
+
+    function updateModalAmountWords() {
+        const value = parseFloat(elements.modalAmount.value) || 0;
+        elements.modalAmountWords.textContent = numberToWords(value);
+    }
+
+    function formatNumber(num) {
+      return new Intl.NumberFormat().format(num);
+    }
+    
+    function formatCurrency(num) {
+        const symbol = globalSettings.currencySymbol || '$';
+        return `${symbol} ${formatNumber(num)}`;
+    }
+
+    function showNotification(message, type = 'success', undoCallback = null) {
+        if (undoTimeoutId) {
+            clearTimeout(undoTimeoutId);
+            undoTimeoutId = null;
+        }
+        elements.notification.innerHTML = '';
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        elements.notification.appendChild(messageSpan);
+        elements.notification.className = `notification ${type}`;
+
+        if (undoCallback) {
+            const undoButton = document.createElement('button');
+            undoButton.textContent = 'Undo';
+            undoButton.className = 'ml-4 font-bold underline';
+            undoButton.onclick = () => {
+                undoCallback();
+                elements.notification.classList.remove('show');
+                clearTimeout(undoTimeoutId);
+                undoTimeoutId = null;
+            };
+            elements.notification.appendChild(undoButton);
+            
+            undoTimeoutId = setTimeout(() => {
+                undoCache = null; 
+                undoTimeoutId = null;
+                elements.notification.classList.remove('show');
+            }, 7000); 
+        } else {
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, 3000);
+        }
+        elements.notification.classList.add('show');
+    }
+
+    function handleExpenseModeToggle() {
+      saveData();
+      currentSettings.expenseMode = elements.expenseModeToggle.checked;
+      saveSettings();
+      loadInitialData();
+      const mode = getTranslatedString(currentSettings.expenseMode ? 'financeTracker' : 'installmentTracker');
+      showNotification(`Switched to ${mode}.`, 'success');
+    }
+
+    function updateUIMode() {
+        const isExpenseMode = currentSettings.expenseMode;
+        const currencySymbol = globalSettings.currencySymbol || '$';
+        
+        elements.installmentModeFormContainer.classList.toggle('hidden', isExpenseMode);
+        elements.expenseModeActionsContainer.classList.toggle('hidden', !isExpenseMode);
+
+        const mainHeader = document.getElementById('main-header-text');
+        if (mainHeader) {
+            const logoHTML = `<img id="mainPageDesktopLogo" src="picasa.png" alt="Tracker icon" class="mr-3 header-icon desktop-logo" height="60" width="60"/>`;
+            const headerText = isExpenseMode ? getTranslatedString('expenseHeader') : getTranslatedString('installmentHeader');
+            mainHeader.innerHTML = `${logoHTML} <span>${headerText}</span>`;
+            
+            const newMainLogo = document.getElementById('mainPageDesktopLogo');
+            if (newMainLogo) {
+                newMainLogo.addEventListener('dblclick', () => newMainLogo.classList.toggle('logo-enlarged'));
+            }
+        }
+
+        if (isExpenseMode) {
+            elements.projectNameHeader.textContent = `Project: ${appState.projectName}`;
+            elements.projectNameHeader.classList.remove('hidden');
+        } else {
+            elements.projectNameHeader.classList.add('hidden');
+        }
+
+        elements.headerSubtext.textContent = isExpenseMode ? getTranslatedString('expenseSubHeader') : getTranslatedString('installmentSubHeader');
+        elements.summaryCard1Label.textContent = isExpenseMode ? getTranslatedString('currentBalance') : getTranslatedString('totalAmount');
+        elements.summaryCard2Label.textContent = isExpenseMode ? getTranslatedString('totalIncome') : getTranslatedString('paidAmount');
+        elements.summaryCard3Label.textContent = isExpenseMode ? getTranslatedString('totalExpenses') : getTranslatedString('pendingAmount');
+        elements.progressTitle.textContent = isExpenseMode ? getTranslatedString('balanceProgress') : getTranslatedString('paymentProgress');
+        
+        if (!isExpenseMode) {
+             const isEditing = !!elements.editPaymentId.value;
+             const projectEstablished = appState.payments.length > 0;
+             elements.totalCostLabel.textContent = isEditing || !projectEstablished ? `${getTranslatedString('totalAmountLabel')} (${currencySymbol})` : `${getTranslatedString('pendingAmountLabel')} (${currencySymbol})`;
+             document.querySelector('label[for="paymentAmount"]').textContent = `${getTranslatedString('transactionAmountLabel')} (${currencySymbol})`;
+             elements.formTitle.textContent = isEditing ? getTranslatedString('editTransaction') : (projectEstablished ? getTranslatedString('addPayment') : 'Setup New Project');
+             updateTotalCostFieldBehavior();
+        } else {
+            if (appState.payments.length === 0) {
+                 showNotification('Click "Add Income" to set your initial balance!', 'success');
+            }
+        }
+    }
+
+
+    function setTheme(themeName) {
+      currentSettings.theme = themeName;
+      saveSettings();
+      applyTheme(themeName);
+      updateSettingsUI();
+    }
+    
+    function applyTheme(themeName) {
+        elements.body.className = `min-h-screen theme-${themeName}`;
+        updateTotalCostFieldBehavior();
+    }
+
+    function handleDynamicColorToggle() {
+      currentSettings.dynamicProgressBar = elements.dynamicColorToggle.checked;
+      saveSettings();
+      updateProgressBarDisplay();
+      toggleManualColorSelector();
+    }
+
+    function toggleManualColorSelector() {
+      const isDisabled = currentSettings.dynamicProgressBar || currentSettings.expenseMode;
+      elements.manualColorSelector.style.opacity = isDisabled ? '0.5' : '1';
+      elements.manualColorSelector.style.pointerEvents = isDisabled ? 'none' : 'auto';
+    }
+    
+    function updateSettingsUI() {
+        document.querySelectorAll('.theme-option').forEach(o => o.classList.toggle('selected', o.dataset.theme === currentSettings.theme));
+        elements.expenseModeToggle.checked = currentSettings.expenseMode;
+        elements.dynamicColorToggle.checked = currentSettings.dynamicProgressBar;
+        toggleManualColorSelector();
+        document.querySelectorAll('.color-option').forEach(o => o.classList.toggle('selected', o.dataset.color === currentSettings.progressBarColor));
+    }
+
+    function setProgressBarColor(color) {
+      if (currentSettings.dynamicProgressBar || currentSettings.expenseMode) return;
+      currentSettings.progressBarColor = color;
+      saveSettings();
+      updateProgressBarDisplay();
+      updateSettingsUI();
+    }
+
+    function updateProgressBarDisplay() {
+        let progress = 0;
+        let color = 'green';
+        if (currentSettings.expenseMode) {
+            const { paidAmount: income, pendingAmount: expenses } = appState;
+            progress = income > 0 ? ((income - expenses) / income) * 100 : 0;
+            if (appState.payments.length === 1 && appState.payments[0].type === 'income') {
+                progress = 100;
+            }
+            if (currentSettings.dynamicProgressBar) {
+                if (progress <= 25) color = 'red';
+                else if (progress <= 50) color = 'yellow';
+                else if (progress <= 75) color = 'blue';
+                else color = 'green';
+            } else {
+                color = 'green';
+            }
+        } else {
+            progress = appState.totalAmount > 0 ? (appState.paidAmount / appState.totalAmount) * 100 : 0;
+            if (currentSettings.dynamicProgressBar) {
+                if (progress <= 25) color = 'red';
+                else if (progress <= 50) color = 'yellow';
+                else if (progress <= 75) color = 'blue';
+                else color = 'green';
+            } else {
+                color = currentSettings.progressBarColor;
+            }
+        }
+        const clampedProgress = Math.min(100, Math.max(0, progress));
+        elements.progressBar.style.width = `${clampedProgress}%`;
+        elements.progressPercentage.textContent = `${Math.round(clampedProgress)}%`;
+        applyProgressBarStyles(color);
+    }
+    
+    function applyProgressBarStyles(color) {
+      const colors = {
+          green: { from: 'from-green-400', to: 'to-green-600', glow: 'rgba(34, 197, 94, 0.3)' },
+          blue: { from: 'from-blue-400', to: 'to-blue-600', glow: 'rgba(59, 130, 246, 0.3)' },
+          red: { from: 'from-red-400', to: 'to-red-600', glow: 'rgba(239, 68, 68, 0.3)' },
+          yellow: { from: 'from-yellow-400', to: 'to-yellow-600', glow: 'rgba(234, 179, 8, 0.3)' }
+      };
+      const selectedColor = colors[color] || colors.green;
+      elements.progressBar.classList.remove(...Object.values(colors).flatMap(c => [c.from, c.to]));
+      elements.progressBar.classList.add(selectedColor.from, selectedColor.to);
+      elements.progressBar.style.boxShadow = `0 0 20px ${selectedColor.glow}`;
+    }
+
+    function handlePaymentMethodChange() {
+        elements.bankDropdownContainer.classList.toggle('show', elements.paymentMethod.value === 'bank');
+        if (elements.paymentMethod.value !== 'bank') elements.customBankContainer.classList.remove('show');
+    }
+
+    function handleBankNameChange() {
+        elements.customBankContainer.classList.toggle('show', elements.bankName.value === 'custom');
+        if (elements.bankName.value === 'custom') elements.customBankName.focus();
+    }
+    
+    function addCustomBankToList(bankName) {
+      if (!currentSettings.customBanks.includes(bankName)) {
+        currentSettings.customBanks.push(bankName);
+        saveSettings();
+        loadCustomBanks();
+      }
+    }
+
+    function loadCustomBanks() {
+        const bankDropdowns = [elements.bankName, elements.modalBankName];
+        bankDropdowns.forEach(dropdown => {
+            if (!dropdown) return;
+            const fragment = document.createDocumentFragment();
+            const existingOptions = Array.from(dropdown.options);
+            
+            existingOptions.forEach(opt => {
+                if (!opt.classList.contains('custom-bank')) {
+                    fragment.appendChild(opt.cloneNode(true));
+                }
+            });
+            dropdown.innerHTML = '';
+            dropdown.appendChild(fragment);
+
+            const customOption = dropdown.querySelector('option[value="custom"]');
+            if (currentSettings.customBanks) {
+                currentSettings.customBanks.forEach(bank => {
+                    const newOption = document.createElement('option');
+                    newOption.value = bank;
+                    newOption.textContent = bank;
+                    newOption.classList.add('custom-bank');
+                    dropdown.insertBefore(newOption, customOption);
+                });
+            }
+        });
+    }
+
+
+    function validateForm(isInitialSetup = false) {
+      const data = {
+        projectName: elements.projectName.value.trim(),
+        paymentAmount: parseFloat(elements.paymentAmount.value),
+        paymentDate: elements.paymentDate.value,
+        totalCost: parseFloat(elements.totalCost.value), 
+        paymentMethod: elements.paymentMethod.value,
+        description: elements.paymentDescription.value.trim(),
+        bankName: ''
+      };
+      if (!data.projectName) { showNotification('Please enter a project/item name', 'error'); return null; }
+      
+      const amountToValidate = isInitialSetup ? data.totalCost : data.paymentAmount;
+      if (isNaN(amountToValidate) || amountToValidate <= 0) {
+        const fieldName = isInitialSetup ? 'initial balance' : 'amount';
+        showNotification(`Please enter a valid, positive ${fieldName}`, 'error'); 
+        return null;
+      }
+      
+      if (!data.paymentDate) { showNotification('Please select a payment date', 'error'); return null; }
+      if (!data.paymentMethod) { showNotification('Please select a payment method', 'error'); return null; }
+      if (data.paymentMethod === 'bank') {
+        data.bankName = elements.bankName.value === 'custom' ? elements.customBankName.value.trim() : elements.bankName.value;
+        if (!data.bankName) { showNotification('Please select or enter a bank name', 'error'); return null; }
+      }
+      return data;
+    }
+
+    function processFormSubmission(forceType) {
+        const isFirstExpenseSetup = currentSettings.expenseMode && appState.payments.length === 0 && !elements.editPaymentId.value;
+
+        if (isFirstExpenseSetup) {
+            const formData = validateForm(true); 
+            if (!formData) return;
+            
+            appState.projectName = formData.projectName;
+            appState.initialBalance = 0; 
+            
+            appState.payments.push({
+                id: Date.now(), projectName: formData.projectName, paymentDate: formData.paymentDate,
+                paymentAmount: formData.totalCost,
+                description: 'Initial Balance',
+                paymentMethod: formData.paymentMethod, bankName: formData.bankName || '-',
+                type: 'income',
+                paymentTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            finishTransaction('Tracker started successfully!');
+            return;
+        }
+
+        const formData = validateForm();
+        if(!formData) return;
+        const type = currentSettings.expenseMode ? forceType : 'installment';
+        addNewRecord(formData, type);
+    }
+
+    function handleUpdateRecord() {
+        const editId = parseInt(elements.editPaymentId.value);
+        if (!editId) return;
+        const formData = validateForm();
+        if (!formData) return;
+        updateRecord(editId, formData);
+    }
+
+
+    async function addNewRecord(formData, type, isShortcut = false) {
+        let { projectName, paymentAmount, paymentDate, totalCost, paymentMethod, bankName, description, category, receiptFile } = formData;
+        
+        if (appState.payments.length === 0 && !currentSettings.expenseMode) {
+            if (paymentAmount > totalCost) {
+                 showNotification('Payment cannot exceed total amount', 'error');
+                 return;
+            }
+            appState.projectName = projectName;
+            appState.totalAmount = totalCost;
+            appState.pendingAmount = totalCost;
+        }
+
+        if (projectName && projectName !== appState.projectName) { 
+            appState.projectName = projectName;
+        }
+        
+        const epsilon = 0.001;
+        if (type === 'installment' && paymentAmount > appState.pendingAmount + epsilon) {
+            showNotification('Payment cannot exceed pending amount', 'error');
+            return;
+        }
+        if (type === 'expense' && paymentAmount > appState.totalAmount + epsilon) {
+            showNotification('Expense cannot exceed current balance', 'error');
+            return;
+        }
+
+        if (bankName) {
+            const isInstallmentCustom = elements.paymentMethod.value === 'bank' && elements.bankName.value === 'custom';
+            const isModalCustom = elements.modalPaymentMethod.value === 'bank' && elements.modalBankName.value === 'custom';
+            if(isInstallmentCustom || isModalCustom) {
+                 addCustomBankToList(bankName);
+            }
+        }
+        
+        let receiptDataURL = null;
+        if (receiptFile) {
+            receiptDataURL = await readFileAsDataURL(receiptFile);
+        }
+
+        appState.payments.push({
+            id: Date.now(), projectName: appState.projectName, paymentDate, paymentAmount, paymentMethod,
+            description: description || '',
+            bankName: bankName || '-', type,
+            category: category || 'Uncategorized',
+            receipt: receiptDataURL,
+            paymentTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        finishTransaction(getTranslatedString('recordAdded'), isShortcut);
+    }
+
+    async function updateRecord(id, formData, isShortcut = false) {
+        const { projectName, paymentAmount, paymentDate, paymentMethod, bankName, description, category, receiptFile, isReceiptRemoved } = formData;
+        const recordIndex = appState.payments.findIndex(p => p.id === id);
+        if(recordIndex === -1) { showNotification('Error: Record not found', 'error'); return; }
+        
+        if (currentSettings.expenseMode && appState.payments[recordIndex].type === 'income' && recordIndex === 0) {
+           appState.initialBalance = paymentAmount;
+        }
+
+        const originalType = appState.payments[recordIndex].type;
+        const updatedRecord = { ...appState.payments[recordIndex], projectName, paymentAmount, paymentDate, paymentMethod, description: description || '', bankName: bankName || '-', type: originalType, category: category || 'Uncategorized' };
+        
+        if (receiptFile) {
+            updatedRecord.receipt = await readFileAsDataURL(receiptFile);
+        } else if (isReceiptRemoved) {
+            updatedRecord.receipt = null;
+        }
+
+        appState.payments[recordIndex] = updatedRecord;
+        finishTransaction(getTranslatedString('recordUpdated'), isShortcut);
+    }
+
+    function finishTransaction(message, isShortcut = false) {
+        recalculateTotals();
+        saveData();
+        updateSummary();
+        clearForm();
+        if (currentPage === 'detail' && currentDetailId) {
+            showTransactionDetail(currentDetailId);
+        }
+        if(isShortcut){
+            showNotification('Transaction saved and shortcut created!', 'success');
+        } else {
+            showNotification(message);
+        }
+        if (!currentSettings.expenseMode && appState.pendingAmount === 0 && appState.totalAmount > 0) showCelebration();
+    }
+    
+    function getRecalculatedTotals(state) {
+        state.payments.sort((a,b) => new Date(a.paymentDate + ' ' + a.paymentTime) - new Date(b.paymentDate + ' ' + b.paymentTime) || a.id - b.id);
+        let tempBalance, tempPending, totalIncome, totalExpenses;
+        if(state.expenseMode) {
+            let currentBalance = 0;
+            totalIncome = state.payments.filter(p => p.type === 'income').reduce((sum, p) => sum + p.paymentAmount, 0);
+            totalExpenses = state.payments.filter(p => p.type === 'expense').reduce((sum, p) => sum + p.paymentAmount, 0);
+            tempBalance = totalIncome - totalExpenses;
+
+        } else {
+            const paid = state.payments.reduce((sum, p) => sum + p.paymentAmount, 0);
+            tempPending = state.totalAmount - paid;
+        }
+        return { tempBalance, tempPending, totalIncome, totalExpenses };
+    }
+
+    function recalculateTotals() {
+        const { tempBalance, tempPending, totalIncome, totalExpenses } = getRecalculatedTotals(appState);
+        if (currentSettings.expenseMode) {
+            appState.paidAmount = totalIncome;
+            appState.pendingAmount = totalExpenses;
+            appState.totalAmount = tempBalance; 
+            appState.initialBalance = appState.payments.length > 0 && appState.payments[0].type === 'income' ? appState.payments[0].paymentAmount : 0;
+            
+            let runningBalance = 0;
+            appState.payments.forEach(p => {
+                runningBalance += (p.type === 'income' ? p.paymentAmount : -p.paymentAmount);
+                p.remaining = runningBalance;
+            });
+        } else {
+            appState.paidAmount = appState.payments.reduce((sum, p) => sum + p.paymentAmount, 0);
+            appState.pendingAmount = appState.totalAmount - appState.paidAmount;
+            let currentPending = appState.totalAmount;
+            appState.payments.forEach(p => {
+                currentPending -= p.paymentAmount;
+                p.remaining = currentPending;
+            });
+        }
+    }
+
+    function clearForm() {
+        elements.paymentForm.reset();
+        elements.paymentDescription.value = '';
+        handlePaymentMethodChange();
+        elements.editPaymentId.value = '';
+        updatePaymentAmountWords();
+        updateTotalCostWords();
+        
+        if (appState.projectName) {
+            elements.projectName.value = appState.projectName;
+        } else {
+            elements.projectName.value = '';
+        }
+
+        setTodayDate();
+        updateUIMode();
+    }
+
+
+    function updateTotalCostFieldBehavior() {
+      const projectEstablished = appState.payments.length > 0;
+      const isEditing = !!elements.editPaymentId.value;
+      
+      elements.projectName.readOnly = projectEstablished || isEditing;
+      elements.totalCost.readOnly = (!currentSettings.expenseMode && projectEstablished) || isEditing;
+      
+      const readOnlyStyle = (element, isReadOnly) => {
+          const bgColor = isReadOnly ? (document.body.classList.contains('theme-dark') ? '#1f2937' : '#f9fafb') : '';
+          const cursor = isReadOnly ? 'not-allowed' : '';
+          element.style.backgroundColor = bgColor;
+          element.style.cursor = cursor;
+      };
+
+      readOnlyStyle(elements.projectName, elements.projectName.readOnly);
+      readOnlyStyle(elements.totalCost, elements.totalCost.readOnly);
+
+      if (currentSettings.expenseMode) {
+          elements.totalCostContainer.classList.toggle('hidden', projectEstablished && !isEditing);
+          elements.paymentAmountContainer.classList.toggle('hidden', !projectEstablished && !isEditing);
+      } else {
+          elements.totalCostContainer.classList.remove('hidden');
+          elements.paymentAmountContainer.classList.remove('hidden');
+          const currencySymbol = globalSettings.currencySymbol || '$';
+          elements.totalCostLabel.textContent = isEditing || !projectEstablished ? `${getTranslatedString('totalAmountLabel')} (${currencySymbol})` : `${getTranslatedString('pendingAmountLabel')} (${currencySymbol})`;
+          elements.totalCostHelper.classList.toggle('hidden', isEditing || !projectEstablished);
+          if (isEditing) elements.totalCost.value = appState.totalAmount;
+          else if (projectEstablished) elements.totalCost.value = appState.pendingAmount;
+          else elements.totalCost.value = '';
+      }
+      updateTotalCostWords();
+    }
+
+    function updateSummary() {
+      elements.totalAmountDisplay.textContent = formatCurrency(appState.totalAmount);
+      elements.paidAmountDisplay.textContent = formatCurrency(appState.paidAmount);
+      elements.pendingAmountDisplay.textContent = formatCurrency(appState.pendingAmount);
+      elements.totalAmountWords.textContent = numberToWords(appState.totalAmount);
+      elements.paidAmountWords.textContent = numberToWords(appState.paidAmount);
+      elements.pendingAmountWords.textContent = numberToWords(appState.pendingAmount);
+      elements.paymentCount.textContent = appState.payments.length;
+      updateProgressBarDisplay();
+    }
+
+    function saveData() {
+        const dataKey = currentSettings.expenseMode ? EXPENSE_STORAGE_KEY : INSTALLMENT_STORAGE_KEY;
+        localStorage.setItem(dataKey, JSON.stringify(appState));
+        saveSettings();
+    }
+    
+    function saveSettings() {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+    }
+
+    function confirmDeleteRecords() {
+        elements.deleteAllPasswordModal.classList.remove('hidden');
+        elements.deleteAllPasswordInput.focus();
+    }
+
+    function handleDeleteAllWithPassword() {
+        const password = elements.deleteAllPasswordInput.value;
+        const correctPassword = localStorage.getItem(DELETE_PASSWORD_KEY) || '7739';
+
+        if (password === correctPassword) {
+            deleteAllRecords();
+            elements.deleteAllPasswordModal.classList.add('hidden');
+            elements.deleteAllPasswordInput.value = '';
+            elements.deleteAllPasswordError.classList.add('hidden');
+        } else {
+            elements.deleteAllPasswordError.classList.remove('hidden');
+            elements.deleteAllPasswordInput.value = '';
+        }
+    }
+
+    function deleteAllRecords() {
+        undoCache = { allRecords: [...appState.payments] };
+        const name = appState.projectName;
+        appState = getNewState(currentSettings.expenseMode);
+        appState.projectName = name; 
+        saveData();
+        updateSummary();
+        clearForm();
+        showNotification('All records deleted.', 'success', undoDeleteAll);
+    }
+
+    function undoDeleteAll() {
+        if (!undoCache || !undoCache.allRecords) return;
+        appState.payments = undoCache.allRecords;
+        recalculateTotals();
+        saveData();
+        updateSummary();
+        showNotification('Records restored.', 'success');
+        undoCache = null;
+    }
+
+    function exportData() {
+      if (appState.payments.length === 0) { showNotification('No data to export', 'error'); return; }
+      const dataStr = JSON.stringify({ settings: currentSettings, data: appState }, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${appState.projectName.replace(/\s+/g, '_')}-${currentSettings.expenseMode ? 'expense' : 'installment'}-data-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function showCelebration() {
+      elements.celebration.classList.remove('hidden');
+      elements.celebrationAudio.play().catch(console.warn);
+      setTimeout(() => { elements.celebrationAudio.pause(); elements.celebrationAudio.currentTime = 0; }, 4000);
+    }
+
+    function closeCelebration() {
+      elements.celebration.classList.add('hidden');
+      elements.celebrationAudio.pause();
+      elements.celebrationAudio.currentTime = 0;
+    }
+
+    function deletePayment(id) {
+        if (!confirm(getTranslatedString('confirmDeleteTransaction'))) return;
+
+        const recordIndex = appState.payments.findIndex(p => p.id === id);
+        if (recordIndex === -1) return;
+        
+        appState.payments.splice(recordIndex, 1);
+        recalculateTotals(); 
+        saveData();
+        updateSummary();
+        showNotification('Record deleted.', 'success');
+        showPage('history');
+    }
+
+    function editPayment(id) {
+        if (!confirm('You are about to edit this transaction. Do you want to continue?')) return;
+        
+        const record = appState.payments.find(p => p.id === id);
+        if (!record) { showNotification('Record not found', 'error'); return; }
+
+        if (currentSettings.expenseMode) {
+            openTransactionModal(record.type, false, record);
+        } else {
+            showPage('main');
+            elements.editPaymentId.value = id;
+            elements.projectName.value = record.projectName;
+            elements.paymentDate.value = record.paymentDate; 
+            elements.paymentAmount.value = record.paymentAmount;
+            elements.paymentDescription.value = record.description || '';
+            elements.paymentMethod.value = record.paymentMethod;
+            if (record.paymentMethod === 'bank') {
+                handlePaymentMethodChange();
+                const isKnownBank = [...elements.bankName.options].some(opt => opt.value === record.bankName);
+                if(isKnownBank){ elements.bankName.value = record.bankName; } 
+                else { elements.bankName.value = 'custom'; elements.customBankName.value = record.bankName; }
+                handleBankNameChange();
+            } else {
+                handlePaymentMethodChange();
+            }
+            updateUIMode(); 
+            updatePaymentAmountWords();
+            elements.paymentAmount.focus();
+        }
+    }
+
+
+    function toggleVisibility() {
+        isBalanceVisible = !isBalanceVisible;
+        localStorage.setItem(VISIBILITY_KEY, JSON.stringify(isBalanceVisible));
+        updateVisibilityUI();
+    }
+
+    function updateVisibilityUI() {
+        const amounts = [elements.totalAmountDisplay, elements.paidAmountDisplay, elements.pendingAmountDisplay];
+        const words = [elements.totalAmountWords, elements.paidAmountWords, elements.pendingAmountWords];
+        const icon = elements.toggleVisibilityBtn.querySelector('i');
+
+        if (isBalanceVisible) {
+            amounts.forEach(el => el.classList.remove('amount-hidden'));
+            words.forEach(el => el.classList.remove('amount-hidden'));
+            icon.className = 'fas fa-eye-slash text-gray-800 dark:text-gray-200';
+            elements.toggleVisibilityBtn.title = 'Hide Amounts';
+        } else {
+            amounts.forEach(el => el.classList.add('amount-hidden'));
+            words.forEach(el => el.classList.add('amount-hidden'));
+            icon.className = 'fas fa-eye text-gray-500';
+            elements.toggleVisibilityBtn.title = 'Show Amounts';
+        }
+    }
+    
+    function handleReceiptPreview() {
+        const file = elements.modalReceipt.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                elements.modalReceiptPreview.src = e.target.result;
+                elements.modalReceiptPreviewContainer.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        } else {
+            removeReceiptPreview();
+        }
+    }
+
+    function removeReceiptPreview() {
+        elements.modalReceipt.value = null; 
+        elements.modalReceiptPreview.src = '';
+        elements.modalReceiptPreviewContainer.classList.add('hidden');
+    }
+
+    function speakAmount() {
+        if ('speechSynthesis' in window) {
+            const amountValue = elements.modalAmount.value;
+            if (amountValue && !isNaN(amountValue)) {
+                window.speechSynthesis.cancel(); 
+                const textToSpeak = numberToWords(parseFloat(amountValue));
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                const lang = getLanguage();
+                
+                switch(lang) {
+                    case 'es': utterance.lang = 'es-ES'; break;
+                    case 'ur': utterance.lang = 'ur-PK'; break;
+                    default:   utterance.lang = 'en-US';
+                }
+
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        } else {
+            showNotification('Text-to-speech is not supported by your browser.', 'error');
+        }
+    }
+
+    function handleModalPaymentMethodChange() {
+        elements.modalBankDropdownContainer.classList.toggle('show', elements.modalPaymentMethod.value === 'bank');
+        if (elements.modalPaymentMethod.value !== 'bank') {
+            elements.modalCustomBankContainer.classList.remove('show');
+        }
+    }
+
+    function handleModalBankNameChange() {
+        elements.modalCustomBankContainer.classList.toggle('show', elements.modalBankName.value === 'custom');
+        if (elements.modalBankName.value === 'custom') {
+            elements.modalCustomBankName.focus();
+        }
+    }
+    
+    function handleModalCategoryChange() {
+        elements.modalCustomCategoryContainer.classList.toggle('show', elements.modalCategory.value === 'custom');
+        if (elements.modalCategory.value === 'custom') {
+            elements.modalCustomCategoryName.focus();
+        }
+    }
+
+    function addCustomCategory(categoryName, type) {
+        const categoryKey = type === 'income' ? 'customIncomeCategories' : 'customExpenseCategories';
+        if (!currentSettings[categoryKey].includes(categoryName)) {
+            currentSettings[categoryKey].push(categoryName);
+            saveSettings();
+        }
+    }
+
+    function loadCategories(type) {
+        const dropdown = elements.modalCategory;
+        dropdown.innerHTML = ''; 
+        
+        const defaultCategories = {
+            income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'],
+            expense: ['Food', 'Transport', 'Bills', 'Shopping', 'Health', 'Entertainment', 'Other']
+        };
+
+        const customCategories = type === 'income' ? currentSettings.customIncomeCategories : currentSettings.customExpenseCategories;
+        
+        defaultCategories[type].forEach(cat => {
+            dropdown.add(new Option(cat, cat));
+        });
+
+        if (customCategories.length > 0) {
+            const optGroup = document.createElement('optgroup');
+            optGroup.label = 'Your Categories';
+            customCategories.forEach(cat => {
+                optGroup.appendChild(new Option(cat, cat));
+            });
+            dropdown.add(optGroup);
+        }
+
+        dropdown.add(new Option('+ Add Custom Category', 'custom'));
+    }
+
+    async function openTransactionModal(type, isInitial = false, record = null) {
+        currentTransactionType = type;
+        elements.modalTransactionForm.reset();
+        removeReceiptPreview(); 
+        setTodayDate();
+
+        loadCategories(type);
+
+        const defaultBanks = `<option value="">${getTranslatedString('chooseBank')}</option><option value="custom">${getTranslatedString('addCustomBank')}</option><option value="Habib Bank Limited">Habib Bank Limited</option><option value="MCB Bank Limited">MCB Bank Limited</option><option value="United Bank Limited">United Bank Limited</option><option value="Allied Bank Limited">Allied Bank Limited</option><option value="Bank Alfalah">Bank Alfalah</option><option value="Faysal Bank">Faysal Bank</option><option value="Standard Chartered Bank">Standard Chartered Bank</option><option value="Meezan Bank">Meezan Bank</option><option value="Bank Islami">Bank Islami</option>`;
+        elements.modalBankName.innerHTML = defaultBanks;
+        loadCustomBanks();
+
+        const currencySymbol = globalSettings.currencySymbol || '$';
+        document.querySelector('label[for="modalAmount"]').textContent = `${getTranslatedString('amount')} (${currencySymbol})`;
+
+        if (isInitial) {
+            elements.transactionModalTitle.textContent = 'Setup Initial Balance';
+            elements.modalDescription.value = 'Initial Balance';
+            elements.modalCategory.value = 'Other';
+            elements.saveTransactionBtn.textContent = 'Start Tracking';
+        } else if (record) { 
+            elements.transactionModalTitle.textContent = `${getTranslatedString('editTransaction')} - ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            elements.saveTransactionBtn.textContent = getTranslatedString('updateTransaction');
+            elements.modalEditId.value = record.id;
+            elements.modalAmount.value = record.paymentAmount;
+            elements.modalDate.value = record.paymentDate;
+            elements.modalDescription.value = record.description;
+            
+            const allCategoryOptions = Array.from(elements.modalCategory.options).map(o => o.value);
+            if (allCategoryOptions.includes(record.category)) {
+                elements.modalCategory.value = record.category;
+            } else {
+                elements.modalCategory.value = 'custom';
+                elements.modalCustomCategoryName.value = record.category;
+            }
+
+            elements.modalPaymentMethod.value = record.paymentMethod;
+            
+            if (record.paymentMethod === 'bank') {
+                 const isKnownBank = [...elements.modalBankName.options].some(opt => opt.value === record.bankName);
+                 if (isKnownBank) {
+                     elements.modalBankName.value = record.bankName;
+                 } else if (record.bankName && record.bankName !== '-') {
+                     elements.modalBankName.value = 'custom';
+                     elements.modalCustomBankName.value = record.bankName;
+                 }
+            }
+
+            if (record.receipt) {
+                elements.modalReceiptPreview.src = record.receipt;
+                elements.modalReceiptPreviewContainer.classList.remove('hidden');
+            }
+
+        } else { 
+            elements.transactionModalTitle.textContent = `${getTranslatedString('addTransaction')} - ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            elements.saveTransactionBtn.textContent = getTranslatedString('saveTransaction');
+            elements.modalDescription.placeholder = 'e.g., Details about the transaction';
+            elements.modalEditId.value = '';
+        }
+        
+        elements.makeShortcutBtn.classList.toggle('hidden', !!record || isInitial);
+
+        updateModalAmountWords();
+        handleModalPaymentMethodChange();
+        handleModalBankNameChange();
+        handleModalCategoryChange();
+        elements.speakAmountBtn.classList.toggle('hidden', !(elements.modalAmount.value && parseFloat(elements.modalAmount.value) > 0));
+
+        elements.transactionModal.classList.remove('hidden');
+        elements.modalAmount.focus();
+    }
+
+    async function handleModalTransactionSubmit(e, isShortcut = false) {
+        e.preventDefault();
+        const amount = parseFloat(elements.modalAmount.value);
+        const date = elements.modalDate.value;
+        const description = elements.modalDescription.value.trim();
+        const method = elements.modalPaymentMethod.value;
+        const editId = elements.modalEditId.value ? parseInt(elements.modalEditId.value) : null;
+        const receiptFile = elements.modalReceipt.files[0];
+        const isReceiptRemoved = !elements.modalReceiptPreview.src && !receiptFile;
+
+        if (isNaN(amount) || amount <= 0) { showNotification('Please enter a valid amount.', 'error'); return; }
+        if (!date) { showNotification('Please select a date.', 'error'); return; }
+        
+        let category = elements.modalCategory.value === 'custom' 
+            ? elements.modalCustomCategoryName.value.trim() 
+            : elements.modalCategory.value;
+        if (!category) { showNotification('Please select or enter a category.', 'error'); return; }
+        
+        if (elements.modalCategory.value === 'custom') {
+            addCustomCategory(category, currentTransactionType);
+        }
+
+        let bankName = '-';
+        if (method === 'bank') {
+            bankName = elements.modalBankName.value === 'custom' 
+                ? elements.modalCustomBankName.value.trim() 
+                : elements.modalBankName.value;
+            if (!bankName) { showNotification('Please select or enter a bank name.', 'error'); return; }
+        }
+
+        if (isShortcut && !editId) {
+            const shortcut = {
+                id: Date.now(),
+                type: currentTransactionType,
+                amount,
+                description,
+                category,
+                paymentMethod: method,
+                bankName
+            };
+            const shortcuts = getShortcuts();
+            shortcuts.push(shortcut);
+            localStorage.setItem(SHORTCUTS_STORAGE_KEY, JSON.stringify(shortcuts));
+        }
+
+        const formData = {
+            projectName: appState.projectName,
+            paymentAmount: amount,
+            paymentDate: date,
+            paymentMethod: method,
+            description: description,
+            bankName: bankName,
+            category: category,
+            receiptFile: receiptFile,
+            isReceiptRemoved: isReceiptRemoved 
+        };
+        
+        if (editId) {
+            await updateRecord(editId, formData, isShortcut);
+        } else {
+             if (appState.payments.length === 0 && currentTransactionType === 'expense') {
+                showNotification('Cannot add an expense as the first transaction. Please add an income first.', 'error');
+                return;
+             }
+             await addNewRecord(formData, currentTransactionType, isShortcut);
+        }
+        
+        elements.transactionModal.classList.add('hidden');
+    }
+    
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function exportToExcel() {
+        if (appState.payments.length === 0) {
+            showNotification('No data to export.', 'error');
+            return;
+        }
+
+        const dataToExport = appState.payments.map(p => ({
+            Date: p.paymentDate,
+            Description: p.description,
+            Category: p.category,
+            Type: p.type,
+            Amount: p.paymentAmount,
+            Method: p.paymentMethod,
+            Bank: p.bankName,
+            'Balance After': p.remaining
+        }));
+        
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+
+        worksheet["!cols"] = [ { wch: 12 }, { wch: 30 }, {wch: 15}, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 } ];
+
+        XLSX.writeFile(workbook, `${appState.projectName.replace(/\s+/g, '_')}_Export.xlsx`);
+        showNotification('Data exported to Excel successfully!', 'success');
+    }
+
+    async function shareFinancialSummary() {
+        const summaryText = `Financial Summary for ${appState.projectName}:\n- Total Income: ${formatCurrency(appState.paidAmount)}\n- Total Expenses: ${formatCurrency(appState.pendingAmount)}\n- Current Balance: ${formatCurrency(appState.totalAmount)}`;
+
+        const shareData = { title: 'Financial Summary', text: summaryText };
+
+        try {
+            if (navigator.share && navigator.canShare(shareData)) {
+                await navigator.share(shareData);
+                showNotification('Summary shared successfully!', 'success');
+            } else { throw new Error('Web Share API not supported.'); }
+        } catch (err) {
+            navigator.clipboard.writeText(summaryText).then(() => {
+                showNotification('Web Share not available. Summary copied to clipboard!', 'success');
+            }).catch(clipErr => {
+                showNotification('Could not share or copy the summary.', 'error');
+            });
+        }
+    }
+
+
+    function renderHistoryPage() {
+      renderHistoryTable();
+      updateHistoryStats();
+    }
+    
+    function setHistoryTableHeader() {
+        const headers = currentSettings.expenseMode ? 
+            [getTranslatedString('date'), getTranslatedString('category'), 'Type', getTranslatedString('amount')] :
+            [getTranslatedString('date'), getTranslatedString('amount'), getTranslatedString('paymentMethodLabel'), 'Bank', getTranslatedString('pendingAmount'), 'Actions'];
+        elements.historyTableHeader.innerHTML = `<tr class="bg-gray-50" role="row">${headers.map(h => `<th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b" scope="col">${h}</th>`).join('')}</tr>`;
+    }
+
+    function renderHistoryTable(filteredPayments = null) {
+      setHistoryTableHeader();
+      const payments = filteredPayments || [...appState.payments].sort((a,b) => b.id - a.id);
+      elements.historyTableBody.innerHTML = '';
+      
+      const noRecordsToShow = payments.length === 0;
+
+      elements.noPaymentsHistory.classList.toggle('hidden', !noRecordsToShow);
+      elements.historyTableBody.parentElement.classList.toggle('hidden', noRecordsToShow);
+      elements.noFilterResults.classList.toggle('hidden', noRecordsToShow || (filteredPayments && filteredPayments.length > 0));
+      
+      if (!noRecordsToShow) {
+        payments.forEach((p) => {
+          const tr = document.createElement('tr');
+          tr.className = 'table-row';
+          tr.setAttribute('onclick', `showTransactionDetail(${p.id})`);
+          
+          if(currentSettings.expenseMode) {
+              const isIncome = p.type === 'income';
+              tr.innerHTML = `<td class="px-4 py-3 text-sm text-gray-700 border-b">${p.paymentDate}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-b">${p.category || '-'}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-b"><span class="px-2 py-1 rounded-full text-xs font-medium ${isIncome ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${isIncome ? getTranslatedString('totalIncome') : getTranslatedString('totalExpenses')}</span></td>
+                  <td class="px-4 py-3 text-sm border-b font-semibold ${isIncome ? 'text-green-600' : 'text-red-600'}">${formatCurrency(p.paymentAmount)}</td>`;
+          } else {
+              const actionsHTML = `<td class="px-4 py-3 text-sm text-gray-700 border-b">
+                <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="event.stopPropagation(); editPayment(${p.id})" title="Edit Record"><i class="fas fa-edit"></i></button>
+                <button class="text-red-500 hover:text-red-700" onclick="event.stopPropagation(); deletePayment(${p.id})" title="Delete Record"><i class="fas fa-trash"></i></button>
+              </td>`;
+              tr.removeAttribute('onclick');
+              tr.style.cursor = 'default';
+
+              tr.innerHTML = `<td class="px-4 py-3 text-sm text-gray-700 border-b">${p.paymentDate}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-b font-semibold">${formatCurrency(p.paymentAmount)}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-b capitalize"><span class="px-2 py-1 rounded-full text-xs font-medium ${p.paymentMethod === 'cash' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}">${p.paymentMethod}</span></td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-b">${p.bankName}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-b font-semibold">${formatCurrency(p.remaining)}</td>
+                  ${actionsHTML}`;
+          }
+          elements.historyTableBody.appendChild(tr);
+        });
+      }
+      elements.totalCount.textContent = appState.payments.length;
+      elements.filteredCount.textContent = payments.length;
+    }
+
+    function showTransactionDetail(id) {
+        const record = appState.payments.find(p => p.id === id);
+        if (!record) {
+            showNotification('Could not find transaction details.', 'error');
+            return;
+        }
+        
+        currentDetailId = id;
+
+        const isIncome = record.type === 'income';
+        elements.detailAmount.textContent = formatCurrency(record.paymentAmount);
+        elements.detailAmount.className = `text-3xl font-bold ${isIncome ? 'text-green-600' : 'text-red-600'}`;
+        elements.detailDateTime.textContent = `${record.paymentDate} at ${record.paymentTime}`;
+
+        elements.detailDescription.textContent = record.description || '-';
+        elements.detailCategory.textContent = record.category || '-';
+        elements.detailType.innerHTML = `<span class="font-semibold px-2 py-0.5 rounded-full ${isIncome ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${isIncome ? getTranslatedString('totalIncome') : getTranslatedString('totalExpenses')}</span>`;
+        elements.detailMethod.textContent = record.paymentMethod === 'bank' ? getTranslatedString('bankTransaction') : getTranslatedString('cash');
+        
+        if (record.paymentMethod === 'bank' && record.bankName !== '-') {
+            elements.detailBank.textContent = record.bankName;
+            elements.detailBankContainer.classList.remove('hidden');
+        } else {
+            elements.detailBankContainer.classList.add('hidden');
+        }
+
+        if (record.receipt) {
+            elements.detailReceiptLink.onclick = () => {
+                elements.receiptModalImage.src = record.receipt;
+                elements.receiptModal.classList.remove('hidden');
+            };
+            elements.detailReceiptContainer.classList.remove('hidden');
+        } else {
+            elements.detailReceiptContainer.classList.add('hidden');
+        }
+
+        elements.detailEditBtn.onclick = () => editPayment(id);
+        elements.detailDeleteBtn.onclick = () => deletePayment(id);
+        
+        showPage('detail');
+    }
+
+
+    function updateHistoryStats() {
+      if (appState.payments.length === 0) {
+        elements.avgPayment.textContent = formatCurrency(0);
+        elements.maxPayment.textContent = formatCurrency(0);
+        elements.minPayment.textContent = formatCurrency(0);
+        elements.lastPaymentDate.textContent = '-';
+        return;
+      }
+      const amounts = appState.payments.map(p => p.paymentAmount);
+      const lastPayment = [...appState.payments].sort((a,b)=> new Date(b.paymentDate) - new Date(a.paymentDate))[0];
+
+      elements.avgPayment.textContent = formatCurrency(Math.round(amounts.reduce((a,b)=>a+b,0) / amounts.length));
+      elements.maxPayment.textContent = formatCurrency(Math.max(...amounts));
+      elements.minPayment.textContent = formatCurrency(Math.min(...amounts));
+      elements.lastPaymentDate.textContent = lastPayment.paymentDate;
+    }
+
+    function filterPayments() {
+      const searchTerm = elements.searchInput.value.toLowerCase().trim();
+      const methodFilter = elements.methodFilter.value;
+      const dateFilter = elements.dateFilter.value;
+      
+      let filtered = appState.payments.filter(p => {
+        const matchesSearch = !searchTerm || 
+            (p.projectName && p.projectName.toLowerCase().includes(searchTerm)) || 
+            p.paymentAmount.toString().includes(searchTerm) || 
+            (p.description && p.description.toLowerCase().includes(searchTerm)) ||
+            (p.category && p.category.toLowerCase().includes(searchTerm)) ||
+            (p.bankName && p.bankName.toLowerCase().includes(searchTerm));
+        const matchesMethod = !methodFilter || p.paymentMethod === methodFilter;
+        let matchesDate = true;
+        if (dateFilter) {
+          const pDate = new Date(p.paymentDate + "T00:00:00");
+          const today = new Date(); today.setHours(0,0,0,0);
+          if (dateFilter === 'today') matchesDate = pDate.getTime() === today.getTime();
+          else if (dateFilter === 'week') { const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay()); matchesDate = pDate >= weekStart; }
+          else if (dateFilter === 'month') { const monthStart = new Date(today.getFullYear(), today.getMonth(), 1); matchesDate = pDate >= monthStart; }
+        }
+        return matchesSearch && matchesMethod && matchesDate;
+      });
+      renderHistoryTable(filtered);
+    }
+
+    function generateChartData() {
+        const dataByYear = {};
+        appState.payments.forEach(p => {
+            const year = new Date(p.paymentDate).getFullYear();
+            if (!dataByYear[year]) {
+                dataByYear[year] = { income: {}, expense: {} };
+            }
+            const categoryData = dataByYear[year][p.type];
+            categoryData[p.category] = (categoryData[p.category] || 0) + p.paymentAmount;
+        });
+        return dataByYear;
+    }
+
+    function renderYearlyCharts() {
+        const yearlyData = generateChartData();
+        const container = elements.yearlyChartsContainer;
+        container.innerHTML = '';
+        const years = Object.keys(yearlyData).sort((a, b) => b - a);
+
+        if (years.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-600 dark:text-gray-400">No transaction data available to display charts.</p>';
+            return;
+        }
+
+        years.forEach(year => {
+            const yearDiv = document.createElement('div');
+            yearDiv.className = 'glass-effect rounded-2xl p-6';
+            yearDiv.innerHTML = `<h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">${year} Summary</h2>`;
+            
+            const chartsGrid = document.createElement('div');
+            chartsGrid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-center';
+            
+            const incomeData = yearlyData[year].income;
+            const expenseData = yearlyData[year].expense;
+
+            chartsGrid.appendChild(createPieChart(incomeData, `income-${year}`, `${year} Income`, year, 'income'));
+            chartsGrid.appendChild(createPieChart(expenseData, `expense-${year}`, `${year} Expenses`, year, 'expense'));
+            
+            yearDiv.appendChild(chartsGrid);
+            container.appendChild(yearDiv);
+        });
+    }
+
+    function createPieChart(data, id, title, year, type) {
+        const chartContainer = document.createElement('div');
+        if (Object.keys(data).length === 0) {
+            chartContainer.innerHTML = `<h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">${title}</h3><p class="text-center text-gray-500">No data for this period.</p>`;
+            return chartContainer;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.id = id;
+        chartContainer.appendChild(canvas);
+
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        const colors = generateColors(labels.length);
+
+        setTimeout(() => {
+            const ctx = canvas.getContext('2d');
+            activeCharts[id] = new Chart(ctx, {
+                type: 'pie',
+                data: { labels: labels, datasets: [{ data: values, backgroundColor: colors }] },
+                options: {
+                    onClick: (e) => {
+                        currentChartYear = year;
+                        currentChartType = type;
+                        showPage('monthlyChart');
+                    },
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: title, font: { size: 18 }, padding: { bottom: 20 } },
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.label}: ${formatCurrency(context.raw)}`
+                            }
+                        },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = (value * 100 / sum).toFixed(1) + '%';
+                                return percentage;
+                            },
+                            color: '#fff',
+                            font: { weight: 'bold' }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }, 0);
+
+        return chartContainer;
+    }
+
+    function renderMonthlyCharts() {
+        elements.monthlyChartTitle.textContent = `Monthly Summary for ${currentChartYear}`;
+
+        const incomeData = new Array(12).fill(0);
+        const expenseData = new Array(12).fill(0);
+
+        appState.payments.forEach(p => {
+            const date = new Date(p.paymentDate);
+            if (date.getFullYear() == currentChartYear) {
+                const month = date.getMonth();
+                if (p.type === 'income') {
+                    incomeData[month] += p.paymentAmount;
+                } else {
+                    expenseData[month] += p.paymentAmount;
+                }
+            }
+        });
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        const incomeCtx = elements.monthlyIncomeChart.getContext('2d');
+        activeCharts['monthlyIncome'] = new Chart(incomeCtx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: `Total Income`,
+                    data: incomeData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: getBarChartOptions()
+        });
+        
+        const expenseCtx = elements.monthlyExpenseChart.getContext('2d');
+        activeCharts['monthlyExpense'] = new Chart(expenseCtx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: `Total Expenses`,
+                    data: expenseData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: getBarChartOptions()
+        });
+    }
+
+    function getBarChartOptions() {
+        return {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                 tooltip: {
+                    callbacks: {
+                        label: (context) => `Total: ${formatCurrency(context.raw)}`
+                    }
+                }
+            },
+            scales: { y: { beginAtZero: true, ticks: { callback: value => `${globalSettings.currencySymbol || '$'} ${formatNumber(value)}` } } }
+        };
+    }
+    
+    function generateColors(count) {
+        const colors = [];
+        const baseHues = [210, 140, 350, 45, 260, 180, 310, 80];
+        for (let i = 0; i < count; i++) {
+            const hue = baseHues[i % baseHues.length] + Math.floor(i / baseHues.length) * 20;
+            colors.push(`hsl(${hue}, 70%, 50%)`);
+        }
+        return colors;
+    }
+
+    function renderCardPage() {
+        const seed = parseInt(currentProjectId, 10);
+        const part1 = (seed % 9000) + 1000;
+        const part2 = ((seed * 3) % 9000) + 1000;
+        const part3 = ((seed * 7) % 9000) + 1000;
+        const part4 = ((seed * 11) % 9000) + 1000;
+        const cardNumber = `${part1} ${part2} ${part3} ${part4}`;
+
+        const cardColor1 = `hsl(${seed % 360}, 70%, 45%)`;
+        const cardColor2 = `hsl(${(seed + 40) % 360}, 70%, 35%)`;
+        elements.projectCardDisplay.style.background = `linear-gradient(135deg, ${cardColor1}, ${cardColor2})`;
+
+        const validThruMonth = ((seed * 5) % 12) + 1;
+        const validThruYear = new Date().getFullYear() + 4 - (seed % 3);
+        
+        elements.cardPageName.textContent = appState.projectName || 'Project Name';
+        elements.cardPageNumber.textContent = cardNumber;
+        elements.cardPageValidThru.textContent = `${String(validThruMonth).padStart(2, '0')}/${String(validThruYear).slice(-2)}`;
+    }
+    
+    function getShortcuts() {
+        return JSON.parse(localStorage.getItem(SHORTCUTS_STORAGE_KEY)) || [];
+    }
+
+    function renderShortcutsPage() {
+        const shortcuts = getShortcuts();
+        const container = elements.shortcutListContainer;
+        container.innerHTML = '';
+        
+        elements.noShortcutsMessage.classList.toggle('hidden', shortcuts.length > 0);
+        
+        shortcuts.forEach(shortcut => {
+            const isIncome = shortcut.type === 'income';
+            const card = document.createElement('div');
+            card.className = 'p-4 rounded-lg flex items-center justify-between transition-all card-hover';
+            card.style.border = '1px solid rgba(0,0,0,0.1)';
+            
+            card.innerHTML = `
+                <div class="flex-grow cursor-pointer" data-action="use" data-id="${shortcut.id}">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-full flex items-center justify-center ${isIncome ? 'bg-green-100' : 'bg-red-100'}">
+                            <i class="fas ${isIncome ? 'fa-plus text-green-600' : 'fa-minus text-red-600'}"></i>
+                        </span>
+                        <div>
+                            <p class="font-bold text-gray-800">${shortcut.description || 'Shortcut'}</p>
+                            <p class="text-sm text-gray-600">${shortcut.category} &bull; ${formatCurrency(shortcut.amount)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <button class="text-red-500 hover:text-red-700 w-10 h-10 rounded-full hover:bg-red-50 transition-colors" data-action="delete" data-id="${shortcut.id}" title="Delete Shortcut">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function handleShortcutListClick(e) {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const id = parseInt(target.dataset.id);
+
+        if (action === 'use') {
+            handleShortcutUse(id);
+        } else if (action === 'delete') {
+            handleShortcutDelete(id);
+        }
+    }
+
+    function handleShortcutUse(id) {
+        const shortcut = getShortcuts().find(s => s.id === id);
+        if (!shortcut) {
+            showNotification('Shortcut not found.', 'error');
+            return;
+        }
+
+        if (confirm(`Add this transaction?\n\n${shortcut.description}\n${formatCurrency(shortcut.amount)}`)) {
+            const today = new Date();
+            const newRecord = {
+                id: Date.now(),
+                projectName: appState.projectName,
+                paymentDate: today.toISOString().split('T')[0],
+                paymentTime: today.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                paymentAmount: shortcut.amount,
+                paymentMethod: shortcut.paymentMethod,
+                description: shortcut.description,
+                bankName: shortcut.bankName,
+                type: shortcut.type,
+                category: shortcut.category,
+                receipt: null
+            };
+
+            appState.payments.push(newRecord);
+            finishTransaction('Transaction added from shortcut.');
+            showPage('main');
+        }
+    }
+
+    function handleShortcutDelete(id) {
+        if (confirm('Are you sure you want to delete this shortcut?')) {
+            let shortcuts = getShortcuts();
+            shortcuts = shortcuts.filter(s => s.id !== id);
+            localStorage.setItem(SHORTCUTS_STORAGE_KEY, JSON.stringify(shortcuts));
+            showNotification('Shortcut deleted.', 'success');
+            renderShortcutsPage();
+        }
+    }
+
+
+    window.closeCelebration = closeCelebration;
+    window.editPayment = editPayment;
+    window.deletePayment = deletePayment;
+    window.setProgressBarColor = setProgressBarColor;
+    window.setTheme = setTheme;
+    window.showTransactionDetail = showTransactionDetail; 
+</script>
+
+</body>
+</html>

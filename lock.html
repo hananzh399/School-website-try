@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayTrack - Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="lock.css">
+</head>
+<body>
+
+    <div class="lock-container">
+        <div class="n-l-con">
+            <img id="lockScreenLogo" src="picasa.png" alt="PayTrack Logo" class="lock-logo">
+            <h1 class="lock-title" data-translate-key="lockTitle">Pay-Track</h1>
+        </div>
+
+        <div class="main-content">
+            <p class="lock-subtitle" id="lockSubtitle">
+                <span data-translate-key="lockSubtitle">Enter your 4-digit PIN to unlock</span>
+                <br>
+                <span class="text-xs" data-translate-key="lockSubtitleDefaultPin">Welcome! The default PIN is <strong>0000</strong>.</span>
+            </p>
+            
+            <div class="pin-display">
+                <input type="password" id="pinInput" maxlength="4" readonly>
+                <div class="pin-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+            <p id="errorMessage" class="error-message hidden" data-translate-key="lockIncorrectPin">Incorrect PIN. Please try again.</p>
+            <p id="lockoutTimer" class="error-message hidden"><span data-translate-key="lockoutMessage">Too many attempts. Please try again in</span> <span id="timerValue">60</span>s.</p>
+
+            <div class="keypad" id="keypad">
+                 <button class="key">1</button>
+                <button class="key">2</button>
+                <button class="key">3</button>
+                <button class="key">4</button>
+                <button class="key">5</button>
+                <button class="key">6</button>
+                <button class="key">7</button>
+                <button class="key">8</button>
+                <button class="key">9</button>
+                <div></div>
+                <button class="key">0</button>
+                <button class="key-action" id="deleteKey"><i class="fas fa-backspace"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script src="lock.js"></script>
+</body>
+</html>
