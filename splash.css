@@ -1,0 +1,129 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #ffffff; /* Solid white background */
+    overflow: hidden; /* Prevents scrollbars */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Container for floating stars and crowns */
+#animation-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Below the main content */
+    pointer-events: none; /* Allows clicking through */
+}
+
+.shape {
+    position: absolute;
+    bottom: -50px; /* Start below the viewport */
+    color: #34D399; /* A nice, modern green */
+    animation: floatUp linear infinite;
+}
+
+/* Keyframe animation for floating shapes */
+@keyframes floatUp {
+    100% {
+        transform: translateY(-110vh); /* Move up the entire screen height */
+    }
+}
+
+/* Main content container */
+.splash-container {
+    text-align: center;
+    position: relative;
+    z-index: 2; /* Ensures logo and title are on top */
+    animation: fadeInContainer 1s ease-in-out forwards;
+}
+
+@keyframes fadeInContainer {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.splash-logo {
+    width: 180px;
+    height: 180px;
+    margin-bottom: 1rem;
+    filter: none;
+    animation: logoAppear 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes logoAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.splash-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #4a5568; /* A dark gray for good contrast on white */
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: titleAppear 1s ease-out 0.6s forwards; /* Delayed start */
+}
+
+@keyframes titleAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- NEW STYLES FOR FOOTER CREDIT --- */
+.footer-credit {
+    position: absolute;
+    bottom: 2rem; /* Positioned at the bottom */
+    left: 50%;
+    transform: translateX(-50%); /* Horizontally centered */
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Space between logo and text */
+    opacity: 0; /* Initially hidden for animation */
+    animation: footerFadeIn 1s ease-out 1.2s forwards; /* Delayed animation */
+}
+
+.footer-logo {
+    width: 30px;
+    height: 30px;
+}
+
+.footer-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #718096; /* A medium gray color */
+}
+
+@keyframes footerFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}

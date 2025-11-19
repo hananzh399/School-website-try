@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay-Track</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="stylesheet" href="splash.css">
+</head>
+<body>
+    <!-- Container for the animated background shapes -->
+    <div id="animation-container"></div>
+
+    <!-- Main content container for the logo and title -->
+    <div class="splash-container">
+        <img src="splsh app image.jpeg" alt="Pay-Track Logo" class="splash-logo">
+        <h1 class="splash-title">Pay-Track</h1>
+    </div>
+
+    <!-- Footer credit for Digital Archo -->
+    <div class="footer-credit">
+        <img src="company2-logo.png" alt="Digital Archo Logo" class="footer-logo">
+        <p class="footer-text">By Digital Archo</p>
+    </div>
+
+    <script>
+        // Timeout to redirect to the next page
+        setTimeout(() => {
+            window.location.replace('lock.html');
+        }, 4000); // 4 second delay
+
+        // Script to dynamically generate animated shapes
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('animation-container');
+            if (container) {
+                const shapes = ['fas fa-star', 'fas fa-crown'];
+                const shapeCount = 30; // Adjust number of shapes
+
+                for (let i = 0; i < shapeCount; i++) {
+                    const shape = document.createElement('i');
+                    const chosenShape = shapes[Math.floor(Math.random() * shapes.length)];
+                    shape.className = `shape ${chosenShape}`;
+
+                    // Randomize properties for a natural look
+                    shape.style.left = `${Math.random() * 100}vw`;
+                    shape.style.fontSize = `${Math.random() * 1.2 + 0.5}rem`; // Size from 0.5rem to 1.7rem
+                    
+                    // The animation duration is now randomized between 3 and 8 seconds
+                    shape.style.animationDuration = `${Math.random() * 5 + 3}s`; 
+                    
+                    shape.style.animationDelay = `${Math.random() * 5}s`; // Delay up to 5s
+                    shape.style.opacity = Math.random() * 0.5 + 0.2; // Opacity from 0.2 to 0.7
+
+                    container.appendChild(shape);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
